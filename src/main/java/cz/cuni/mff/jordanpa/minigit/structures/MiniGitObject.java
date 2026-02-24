@@ -1,7 +1,6 @@
 package cz.cuni.mff.jordanpa.minigit.structures;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;

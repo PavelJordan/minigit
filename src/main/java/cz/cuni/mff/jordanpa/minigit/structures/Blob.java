@@ -19,6 +19,9 @@ public final class Blob extends MiniGitObject implements TreeContent {
     public Blob(byte[] content) {
         this.content = content;
     }
+    public Blob(Path path) throws IOException {
+        this(Files.readAllBytes(path));
+    }
 
     private String sha1;
 

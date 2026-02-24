@@ -37,8 +37,7 @@ public final class BlobCommand implements Command {
                 IO.println("File does not exist.");
                 return 1;
             }
-            byte[] bytes = Files.readAllBytes(filePath);
-            Blob blob = new Blob(bytes);
+            Blob blob = new Blob(filePath);
             repo.storeInternally(blob);
             repo.save();
         }
