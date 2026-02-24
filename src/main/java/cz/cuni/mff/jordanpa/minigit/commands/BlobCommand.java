@@ -39,8 +39,8 @@ public final class BlobCommand implements Command {
             }
             byte[] bytes = Files.readAllBytes(filePath);
             Blob blob = new Blob(bytes);
-            repo.StoreInternally(blob);
-            repo.save(repoDir);
+            repo.storeInternally(blob);
+            repo.save();
         }
         catch (IOException e) {
             IO.println(e);

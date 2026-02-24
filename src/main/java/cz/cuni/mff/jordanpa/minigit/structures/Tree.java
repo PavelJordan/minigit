@@ -38,4 +38,9 @@ public final class Tree extends MiniGitObject implements TreeContent {
     void write(Path path) throws IOException {
 
     }
+
+    @Override
+    public String getDescription() {
+        return "";
+    }
 }

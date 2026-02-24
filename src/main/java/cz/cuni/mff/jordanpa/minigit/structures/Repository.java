@@ -19,30 +19,48 @@ public final class Repository {
     private final HashMap<String, String> references = new HashMap<>();
 
     private Commit head;
+    private final Path repoPath;
+    private final Path objectsPath;
 
-    public void StoreInternally(MiniGitObject obj) {
-        objects.put(obj.miniGitSha1(), obj);
-    }
-
-    MiniGitObject LoadFromInternal(String hash) {
-        return objects.get(hash);
-    }
-
-    public void save(Path saveAt) throws IOException {
-        Path objectsPath = saveAt.resolve("objects");
-        if (!Files.exists(objectsPath)) {
-            Files.createDirectory(objectsPath);
-        }
-        for (Map.Entry<String, MiniGitObject> obj : objects.entrySet()) {
-            Path objPath = objectsPath.resolve(Path.of(obj.getKey().substring(0, 2), obj.getKey().substring(2)));
-            obj.getValue().write(objPath);
-        }
+    public Repository(Path path) {
+        this.repoPath = path;
+        this.objectsPath = path.resolve("objects");
     }
 
     public static Repository load(Path loadFrom) throws IOException {
         if (!Files.exists(loadFrom)) {
             throw new IOException("Repository does not exist.");
         }
-        return new Repository();
+        return new Repository(loadFrom);
+    }
+
+
+    public void storeInternally(MiniGitObject obj) {
+        objects.put(obj.miniGitSha1(), obj);
+    }
+
+    public MiniGitObject loadFromInternal(String hash) {
+        if (!objects.containsKey(hash)) {
+            try {
+                MiniGitObject obj = MiniGitObject.getObjectBasedOnHash(objectsPath, hash);
+                objects.put(hash, obj);
+            }
+            catch(IOException e) {
+                IO.println(e);
+                IO.println("Error loading object from repository. Check your permissions and hash and try again.");
+                return null;
+            }
+        }
+        return objects.get(hash);
+    }
+
+    public void save() throws IOException {
+
+        if (!Files.exists(objectsPath)) {
+            Files.createDirectory(objectsPath);
+        }
+        for (Map.Entry<String, MiniGitObject> obj : objects.entrySet()) {
+            MiniGitObject.saveObjectBasedOnHash(objectsPath, obj.getKey(), obj.getValue());
+        }
     }
 }

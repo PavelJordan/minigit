@@ -53,4 +53,9 @@ public final class Commit extends MiniGitObject {
     void write(Path path) throws IOException {
 
     }
+
+    @Override
+    public String getDescription() {
+        return "";
+    }
 }

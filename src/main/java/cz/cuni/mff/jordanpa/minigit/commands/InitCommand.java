@@ -32,8 +32,8 @@ public final class InitCommand implements Command {
         }
         try {
             Files.createDirectory(minigitPath);
-            Repository repo = new Repository();
-            repo.save(minigitPath);
+            Repository repo = new Repository(minigitPath);
+            repo.save();
         }
         catch (IOException e) {
             IO.println(e);

@@ -1,7 +1,5 @@
 package cz.cuni.mff.jordanpa.minigit.structures;
 
-import cz.cuni.mff.jordanpa.minigit.misc.MiniGitHeaders;
-
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -11,8 +9,6 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
 
 /**
  * File content, as represented in MiniGit.
@@ -61,8 +57,13 @@ public final class Blob extends MiniGitObject implements TreeContent {
         IO.println("Blob written with hash [" + miniGitSha1() + "] to " + path);
     }
 
+    @Override
+    public String getDescription() {
+        return "Object:\nblob\nContent:\n" + new String(content);
+    }
+
     private void writeToStream(OutputStream out) throws IOException {
-        out.write(MiniGitHeaders.BLOB_HEADER);
+        out.write(BLOB_HEADER);
         out.write(content);
     }
 }
