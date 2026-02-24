@@ -3,10 +3,7 @@ package cz.cuni.mff.jordanpa.minigit.structures;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 public final class Repository {
 
@@ -26,7 +23,7 @@ public final class Repository {
     /**
      * Map path -> hash.
      */
-    private HashMap<String, String> index;
+    private HashMap<Path, String> index;
 
     public Repository(Path path) {
         this.repoPath = path;
@@ -83,7 +80,7 @@ public final class Repository {
         for (Path file : files) {
             try {
                 Blob blob = new Blob(file);
-                index.put(file.toString(), blob.miniGitSha1());
+                index.put(file, blob.miniGitSha1());
                 storeInternally(blob);
             }
             catch(IOException e) {
@@ -106,7 +103,7 @@ public final class Repository {
                 String nextLine = scanner.nextLine();
                 int delimiterIndex = nextLine.indexOf(' ');
                 String hash = nextLine.substring(0, delimiterIndex);
-                String path = nextLine.substring(delimiterIndex + 1);
+                Path path = Path.of(nextLine.substring(delimiterIndex + 1)).normalize();
                 index.put(path, hash);
             }
         }
@@ -124,9 +121,19 @@ public final class Repository {
             return;
         }
         try (var out = Files.newBufferedWriter(indexPath)) {
-            for (Map.Entry<String, String> entry : index.entrySet()) {
-                out.write(entry.getValue() + " " + entry.getKey() + "\n");
+            for (Map.Entry<Path, String> entry : index.entrySet()) {
+                out.write(entry.getValue() + " " + entry.getKey().normalize() + "\n");
             }
         }
+    }
+
+    public Set<Path> getTrackedFiles() throws IOException {
+        ensureIndexLoaded();
+        return Set.copyOf(index.keySet());
+    }
+
+    public String trackedFileHash(Path path) throws IOException {
+        ensureIndexLoaded();
+        return index.get(path);
     }
 }
