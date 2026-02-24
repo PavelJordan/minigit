@@ -1,5 +1,7 @@
 package cz.cuni.mff.jordanpa.minigit.structures;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 
 /**
@@ -14,21 +16,26 @@ public final class Tree extends MiniGitObject implements TreeContent {
     /**
      * Constructor for creating a tree
      */
-    public Tree(HashMap<String, TreeContent> contents) {
-        contents.forEach((name, content) -> this.contents.put(name, content.sha1()));
+    Tree(HashMap<String, TreeContent> contents) {
+        contents.forEach((name, content) -> this.contents.put(name, content.miniGitSha1()));
     }
 
     /**
-     * Constructor for loading an existing tree. Used by storage parser.
+     * Constructor for loading an existing tree.
      */
-    Tree(String[] names, String[] contentHashes) {
+    private Tree(String[] names, String[] contentHashes) {
         for (int i = 0; i < names.length; i++) {
             this.contents.put(names[i], contentHashes[i]);
         }
     }
 
     @Override
-    public String sha1() {
+    public String miniGitSha1() {
         throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    @Override
+    void write(Path path) throws IOException {
+
     }
 }

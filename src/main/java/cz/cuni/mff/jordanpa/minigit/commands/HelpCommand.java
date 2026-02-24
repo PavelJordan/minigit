@@ -28,6 +28,7 @@ public final class HelpCommand implements Command {
             plugins.values().forEach(command -> System.out.println(command.name() + ": " + command.shortHelp()));
         }
         catch (Exception e) {
+            IO.println(e);
             IO.println("Error loading plugins. Contact the developer.");
             return 1;
         }

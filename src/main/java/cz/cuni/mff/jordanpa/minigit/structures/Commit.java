@@ -2,6 +2,8 @@ package cz.cuni.mff.jordanpa.minigit.structures;
 
 import cz.cuni.mff.jordanpa.minigit.misc.Author;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 /**
@@ -25,17 +27,17 @@ public final class Commit extends MiniGitObject {
     /**
      * Constructor for creating a new commit
      */
-    public Commit(Tree snapshot, Commit[] parents, Author author, String message) {
-        this.Snapshot = snapshot.sha1();
-        this.parents = Arrays.stream(parents).map(Commit::sha1).toArray(String[]::new);
+    Commit(Tree snapshot, Commit[] parents, Author author, String message) {
+        this.Snapshot = snapshot.miniGitSha1();
+        this.parents = Arrays.stream(parents).map(Commit::miniGitSha1).toArray(String[]::new);
         this.author = author;
         this.message = message;
     }
 
     /**
-     * Constructor for loading an existing commit. Used by storage parser.
+     * Constructor for loading an existing commit.
      */
-    Commit(String snapshot, String[] parents, Author author, String message) {
+    private Commit(String snapshot, String[] parents, Author author, String message) {
         this.Snapshot = snapshot;
         this.parents = parents.clone();
         this.author = author;
@@ -43,7 +45,12 @@ public final class Commit extends MiniGitObject {
     }
 
     @Override
-    public String sha1() {
+    public String miniGitSha1() {
         throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    @Override
+    void write(Path path) throws IOException {
+
     }
 }
