@@ -46,6 +46,10 @@ public final class Tree extends MiniGitObject implements TreeContent {
 
     String sha1;
 
+    public Map<String, TreeEntry> getContents() {
+        return Map.copyOf(contents);
+    }
+
     /**
      * Create a new tree with the specified structure. The files (blobs) and trees must be saved in the database manually!
      * The last tree in the list is the root tree.

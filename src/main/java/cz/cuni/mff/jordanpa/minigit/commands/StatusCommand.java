@@ -30,23 +30,13 @@ public final class StatusCommand implements Command {
     public int execute(String[] args) {
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
-            List<Path> existingPaths = getPaths(Path.of("./"));
-            Map<Path, String> trackedPaths = repo.getTrackedFiles();
-            ArrayList<Path> untrackedPaths = new ArrayList<>();
-            ArrayList<Path> modifiedPaths = new ArrayList<>();
-            for (Path path : existingPaths) {
-                if (!trackedPaths.containsKey(path)) {
-                    untrackedPaths.add(path);
-                }
-                else {
-                    String trackedHash = trackedPaths.get(path);
-                    Blob newBlob = new Blob(path);
-                    if (!trackedHash.equals(newBlob.miniGitSha1())) {
-                        modifiedPaths.add(path);
-                    }
-                }
-            }
-            List<Path> deletedPaths = trackedPaths.keySet().stream().filter(path -> !existingPaths.contains(path)).toList();
+            List<Repository.FileStatus> statuses = repo.getStatus();
+
+            var untrackedPaths = statuses.stream().filter(fileStatus -> fileStatus.status() == Repository.FileStatusType.UNTRACKED).map(Repository.FileStatus::path).toList();
+            var modifiedPaths = statuses.stream().filter(fileStatus -> fileStatus.status() == Repository.FileStatusType.MODIFIED).map(Repository.FileStatus::path).toList();
+            var deletedPaths = statuses.stream().filter(fileStatus -> fileStatus.status() == Repository.FileStatusType.DELETED).map(Repository.FileStatus::path).toList();
+            var trackedPaths = statuses.stream().filter(fileStatus -> fileStatus.status() == Repository.FileStatusType.TRACKED).map(Repository.FileStatus::path).toList();
+
             if (!untrackedPaths.isEmpty()) {
                 IO.println("Untracked files:");
                 untrackedPaths.forEach(IO::println);
@@ -63,7 +53,7 @@ public final class StatusCommand implements Command {
                 IO.println("_____________");
             }
             IO.println("Up-to-date tracked files:");
-            trackedPaths.keySet().stream().filter(path -> !deletedPaths.contains(path) && !modifiedPaths.contains(path)).forEach(IO::println);
+            trackedPaths.forEach(IO::println);
             IO.println("_____________");
             return 0;
         }
@@ -71,26 +61,5 @@ public final class StatusCommand implements Command {
             IO.println(e);
             return 1;
         }
-    }
-
-    private List<Path> getPaths(Path path) {
-        ArrayList<Path> paths = new ArrayList<>();
-        try(var dirStream = Files.newDirectoryStream(path)) {
-            for (Path entry : dirStream) {
-                if (entry.getFileName().toString().equals(".minigit")) {
-                    continue;
-                }
-                if (Files.isDirectory(entry)) {
-                    paths.addAll(getPaths(entry));
-                }
-                else {
-                    paths.add(entry.normalize());
-                }
-            }
-        }
-        catch(IOException e) {
-            IO.println(e);
-        }
-        return paths;
     }
 }
