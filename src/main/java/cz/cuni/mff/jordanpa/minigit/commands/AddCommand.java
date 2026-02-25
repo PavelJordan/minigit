@@ -5,7 +5,7 @@ import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 import java.io.IOException;
 import java.nio.file.Path;
 
-public class AddCommand implements Command{
+public final class AddCommand implements Command{
     @Override
     public String name() {
         return "add";
@@ -26,7 +26,7 @@ public class AddCommand implements Command{
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
             for (String arg : args) {
-                IO.println("Adding " + arg + "...");
+                IO.println("Adding changes of " + arg + "...");
                 repo.addToIndex(Path.of(arg));
             }
             repo.save();

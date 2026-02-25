@@ -79,6 +79,10 @@ public final class Repository {
         ensureIndexLoaded();
         for (Path file : files) {
             try {
+                if (!Files.exists(file)) {
+                    index.remove(file);
+                    continue;
+                }
                 Blob blob = new Blob(file);
                 index.put(file, blob.miniGitSha1());
                 storeInternally(blob);

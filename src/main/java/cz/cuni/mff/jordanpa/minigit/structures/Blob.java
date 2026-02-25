@@ -69,4 +69,10 @@ public final class Blob extends MiniGitObject implements TreeContent {
         out.write(BLOB_HEADER);
         out.write(content);
     }
+
+    public void writeContentsTo(Path path) throws IOException{
+        try (BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(path))) {
+            out.write(content);
+        }
+    }
 }

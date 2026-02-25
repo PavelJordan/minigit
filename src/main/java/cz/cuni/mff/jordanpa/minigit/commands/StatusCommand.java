@@ -9,9 +9,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
 
-public class StatusCommand implements Command {
+public final class StatusCommand implements Command {
     @Override
     public String name() {
         return "status";
@@ -48,22 +47,24 @@ public class StatusCommand implements Command {
                 }
             }
             List<Path> deletedPaths = trackedPaths.stream().filter(path -> !existingPaths.contains(path)).toList();
-            if (untrackedPaths.isEmpty() && modifiedPaths.isEmpty() && deletedPaths.isEmpty()) {
-                IO.println("Everything up-to-date.");
-                return 0;
-            }
             if (!untrackedPaths.isEmpty()) {
                 IO.println("Untracked files:");
                 untrackedPaths.forEach(IO::println);
+                IO.println("_____________");
             }
             if (!modifiedPaths.isEmpty()) {
-                IO.println("Modified files:");
+                IO.println("Modified tracked files:");
                 modifiedPaths.forEach(IO::println);
+                IO.println("_____________");
             }
             if (!deletedPaths.isEmpty()) {
-                IO.println("Deleted files:");
+                IO.println("Deleted tracked files:");
                 deletedPaths.forEach(IO::println);
+                IO.println("_____________");
             }
+            IO.println("Up-to-date tracked files:");
+            trackedPaths.stream().filter(path -> !deletedPaths.contains(path) && !modifiedPaths.contains(path)).forEach(IO::println);
+            IO.println("_____________");
             return 0;
         }
         catch(IOException e) {
