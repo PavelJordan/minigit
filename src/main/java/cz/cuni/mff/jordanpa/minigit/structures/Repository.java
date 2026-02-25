@@ -1,5 +1,8 @@
 package cz.cuni.mff.jordanpa.minigit.structures;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,11 +73,6 @@ public final class Repository {
         saveIndex();
     }
 
-    public void removeFromIndex(Path... files) throws IOException {
-        ensureIndexLoaded();
-        throw new UnsupportedOperationException("Not implemented yet.");
-    }
-
     public void addToIndex(Path... files) throws IOException {
         ensureIndexLoaded();
         for (Path file : files) {
@@ -131,13 +129,8 @@ public final class Repository {
         }
     }
 
-    public Set<Path> getTrackedFiles() throws IOException {
+    public Map<Path, String> getTrackedFiles() throws IOException {
         ensureIndexLoaded();
-        return Set.copyOf(index.keySet());
-    }
-
-    public String trackedFileHash(Path path) throws IOException {
-        ensureIndexLoaded();
-        return index.get(path);
+        return Map.copyOf(index);
     }
 }

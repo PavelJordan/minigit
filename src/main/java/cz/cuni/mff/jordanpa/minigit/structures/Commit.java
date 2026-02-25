@@ -5,6 +5,7 @@ import cz.cuni.mff.jordanpa.minigit.misc.Author;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Represents a frozen state of a repository the user can refer to.
@@ -24,29 +25,11 @@ public final class Commit extends MiniGitObject {
     private final Author author;
     private final String message;
 
-    /**
-     * Constructor for creating a new commit
-     */
-    Commit(Tree snapshot, Commit[] parents, Author author, String message) {
-        this.Snapshot = snapshot.miniGitSha1();
-        this.parents = Arrays.stream(parents).map(Commit::miniGitSha1).toArray(String[]::new);
+    public Commit(String snapshot, String[] parents, Author author, String message) {
+        Snapshot = snapshot;
+        this.parents = parents;
         this.author = author;
         this.message = message;
-    }
-
-    /**
-     * Constructor for loading an existing commit.
-     */
-    private Commit(String snapshot, String[] parents, Author author, String message) {
-        this.Snapshot = snapshot;
-        this.parents = parents.clone();
-        this.author = author;
-        this.message = message;
-    }
-
-    @Override
-    public String miniGitSha1() {
-        throw new UnsupportedOperationException("Not implemented yet.");
     }
 
     @Override
@@ -57,5 +40,14 @@ public final class Commit extends MiniGitObject {
     @Override
     public String getDescription() {
         return "";
+    }
+
+    /**
+     * Returns the hash of this object.
+     * Should be calculated only once, for example, when the object is first created.
+     */
+    @Override
+    public String miniGitSha1() {
+        throw new UnsupportedOperationException();
     }
 }

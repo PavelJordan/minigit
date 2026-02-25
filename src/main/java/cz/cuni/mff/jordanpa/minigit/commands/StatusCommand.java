@@ -8,7 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 public final class StatusCommand implements Command {
     @Override
@@ -31,22 +31,22 @@ public final class StatusCommand implements Command {
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
             List<Path> existingPaths = getPaths(Path.of("./"));
-            Set<Path> trackedPaths = repo.getTrackedFiles();
+            Map<Path, String> trackedPaths = repo.getTrackedFiles();
             ArrayList<Path> untrackedPaths = new ArrayList<>();
             ArrayList<Path> modifiedPaths = new ArrayList<>();
             for (Path path : existingPaths) {
-                if (!trackedPaths.contains(path)) {
+                if (!trackedPaths.containsKey(path)) {
                     untrackedPaths.add(path);
                 }
                 else {
-                    String trackedHash = repo.trackedFileHash(path);
+                    String trackedHash = trackedPaths.get(path);
                     Blob newBlob = new Blob(path);
                     if (!trackedHash.equals(newBlob.miniGitSha1())) {
                         modifiedPaths.add(path);
                     }
                 }
             }
-            List<Path> deletedPaths = trackedPaths.stream().filter(path -> !existingPaths.contains(path)).toList();
+            List<Path> deletedPaths = trackedPaths.keySet().stream().filter(path -> !existingPaths.contains(path)).toList();
             if (!untrackedPaths.isEmpty()) {
                 IO.println("Untracked files:");
                 untrackedPaths.forEach(IO::println);
@@ -63,7 +63,7 @@ public final class StatusCommand implements Command {
                 IO.println("_____________");
             }
             IO.println("Up-to-date tracked files:");
-            trackedPaths.stream().filter(path -> !deletedPaths.contains(path) && !modifiedPaths.contains(path)).forEach(IO::println);
+            trackedPaths.keySet().stream().filter(path -> !deletedPaths.contains(path) && !modifiedPaths.contains(path)).forEach(IO::println);
             IO.println("_____________");
             return 0;
         }

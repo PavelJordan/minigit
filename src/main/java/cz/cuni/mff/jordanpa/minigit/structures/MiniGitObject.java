@@ -1,10 +1,10 @@
 package cz.cuni.mff.jordanpa.minigit.structures;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 /**
@@ -21,14 +21,17 @@ public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob,
         if (!Files.exists(objPath)) {
             return null;
         }
-        ByteArrayOutputStream contentsBuff = new ByteArrayOutputStream();
         byte[] header;
+        ByteArrayOutputStream contentsBuff = new ByteArrayOutputStream();
         try (var in = new BufferedInputStream(Files.newInputStream(objPath))) {
             header = in.readNBytes(HEADER_SIZES);
             in.transferTo(contentsBuff);
         }
         if (Arrays.equals(header, BLOB_HEADER)) {
             return new Blob(contentsBuff.toByteArray());
+        }
+        if (Arrays.equals(header, TREE_HEADER)) {
+            return new Tree(contentsBuff.toByteArray());
         }
         throw new IOException("Unknown object type: {" + new String(header) + "]}.");
     }
@@ -40,4 +43,25 @@ public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob,
 
     abstract void write(Path path) throws IOException;
     public abstract String getDescription();
+
+    protected String getSha1FromBytes(byte[] bytes) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            return byteArray2Hex(md.digest(bytes));
+        } catch (NoSuchAlgorithmException e) {
+            IO.println("SHA-1 algorithm not found. This should never happen.");
+            return "";
+        }
+    }
+
+    protected void writeBytes(byte[] bytes, Path path) throws IOException{
+        if (Files.exists(path)) {
+            IO.println("Object already exists with hash [" + miniGitSha1() + "] at " + path + ". Skipping write.");
+            return;
+        }
+        Files.createDirectories(path.getParent());
+        try(var out = new BufferedOutputStream(Files.newOutputStream(path))) {
+            out.write(bytes);
+        }
+    }
 }

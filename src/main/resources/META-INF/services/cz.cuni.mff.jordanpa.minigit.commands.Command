@@ -5,3 +5,4 @@ cz.cuni.mff.jordanpa.minigit.commands.InspectCommand
 cz.cuni.mff.jordanpa.minigit.commands.AddCommand
 cz.cuni.mff.jordanpa.minigit.commands.StatusCommand
 cz.cuni.mff.jordanpa.minigit.commands.RestoreCommand
+cz.cuni.mff.jordanpa.minigit.commands.TreeCommand

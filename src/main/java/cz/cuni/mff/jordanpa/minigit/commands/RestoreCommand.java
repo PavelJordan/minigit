@@ -7,6 +7,7 @@ import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Set;
 
 public final class RestoreCommand implements Command{
@@ -30,18 +31,24 @@ public final class RestoreCommand implements Command{
     public int execute(String[] args) {
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
-            Set<Path> trackedFiles = repo.getTrackedFiles();
-            for (Path path : trackedFiles) {
-                Blob currentBlob = new Blob(path);
-                MiniGitObject trackedObject = repo.loadFromInternal(repo.trackedFileHash(path));
-                if (trackedObject instanceof Blob trackedBlob) {
-                    if (!currentBlob.miniGitSha1().equals(trackedBlob.miniGitSha1())) {
-                        trackedBlob.writeContentsTo(path);
+            Map<Path, String> trackedFiles = repo.getTrackedFiles();
+            for (var entry : trackedFiles.entrySet()) {
+                boolean shouldOverwrite = true;
+                if (Files.exists(entry.getKey())) {
+                    Blob currentBlob = new Blob(entry.getKey());
+                    if (currentBlob.miniGitSha1().equals(entry.getValue())) {
+                        shouldOverwrite = false;
                     }
                 }
-                else {
-                    IO.println("Error: tracked file is not a blob. Repository is corrupted.");
-                    return 1;
+                if (shouldOverwrite) {
+                    MiniGitObject trackedObject = repo.loadFromInternal(entry.getValue());
+                    if (trackedObject instanceof Blob trackedBlob) {
+                        trackedBlob.writeContentsTo(entry.getKey());
+                    }
+                    else {
+                        IO.println("Error: tracked file is not a blob. Repository is corrupted.");
+                        return 1;
+                    }
                 }
             }
         } catch (IOException e) {

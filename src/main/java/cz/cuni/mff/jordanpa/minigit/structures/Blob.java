@@ -19,8 +19,9 @@ public final class Blob extends MiniGitObject implements TreeContent {
     public Blob(byte[] content) {
         this.content = content;
     }
+
     public Blob(Path path) throws IOException {
-        this(Files.readAllBytes(path));
+        content = Files.readAllBytes(path);
     }
 
     private String sha1;
@@ -31,14 +32,10 @@ public final class Blob extends MiniGitObject implements TreeContent {
             return sha1;
         }
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             writeToStream(baos);
-            sha1 = byteArray2Hex(md.digest(baos.toByteArray()));
+            sha1 = getSha1FromBytes(baos.toByteArray());
             return sha1;
-        } catch (NoSuchAlgorithmException e) {
-            IO.println("SHA-1 algorithm not found. This should never happen.");
-            return "";
         }
         catch (IOException e) {
             IO.println(e);
@@ -49,14 +46,9 @@ public final class Blob extends MiniGitObject implements TreeContent {
 
     @Override
     void write(Path path) throws IOException {
-        if (Files.exists(path)) {
-            IO.println("Object already exists with hash [" + miniGitSha1() + "] at " + path + ". Skipping write.");
-            return;
-        }
-        Files.createDirectories(path.getParent());
-        try(var out = new BufferedOutputStream(Files.newOutputStream(path))) {
-            writeToStream(out);
-        }
+        ByteArrayOutputStream baOs = new ByteArrayOutputStream();
+        writeToStream(baOs);
+        writeBytes(baOs.toByteArray(), path);
         IO.println("Blob written with hash [" + miniGitSha1() + "] to " + path);
     }
 
@@ -65,14 +57,17 @@ public final class Blob extends MiniGitObject implements TreeContent {
         return "Object:\nblob\nContent:\n" + new String(content);
     }
 
-    private void writeToStream(OutputStream out) throws IOException {
-        out.write(BLOB_HEADER);
-        out.write(content);
-    }
-
     public void writeContentsTo(Path path) throws IOException{
+        if (path.getParent() != null) {
+            Files.createDirectories(path.getParent());
+        }
         try (BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(path))) {
             out.write(content);
         }
+    }
+
+    private void writeToStream(OutputStream out) throws IOException {
+        out.write(BLOB_HEADER);
+        out.write(content);
     }
 }
