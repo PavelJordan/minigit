@@ -69,7 +69,6 @@ public final class Tree extends MiniGitObject implements TreeContent {
             }
         }
         for (Path dir : treesHere) {
-            IO.println("Descending into: " + dir);
             HashMap<Path, String> filesInDir = new HashMap<>();
             files.entrySet().stream().filter(entry -> entry.getKey().startsWith(dir)).forEach(entry -> filesInDir.put(entry.getKey().subpath(1, entry.getKey().getNameCount()), entry.getValue()));
             LinkedList<Tree> lowerTrees = buildTree(filesInDir);
@@ -79,7 +78,6 @@ public final class Tree extends MiniGitObject implements TreeContent {
             }
             contents.put(dir.getFileName().toString(), new TreeEntry(lowerTrees.getLast().miniGitSha1(), TreeEntryType.TREE));
             trees.addAll(lowerTrees);
-            IO.println("Ascending from: " + dir);
         }
         Tree root = new Tree(contents);
         trees.add(root);
@@ -108,7 +106,6 @@ public final class Tree extends MiniGitObject implements TreeContent {
         ByteArrayOutputStream baOs = new ByteArrayOutputStream();
         writeToStream(baOs);
         writeBytes(baOs.toByteArray(), path);
-        IO.println("Tree written with hash [" + miniGitSha1() + "] to " + path);
     }
 
     @Override

@@ -49,7 +49,6 @@ public final class Blob extends MiniGitObject implements TreeContent {
         ByteArrayOutputStream baOs = new ByteArrayOutputStream();
         writeToStream(baOs);
         writeBytes(baOs.toByteArray(), path);
-        IO.println("Blob written with hash [" + miniGitSha1() + "] to " + path);
     }
 
     @Override

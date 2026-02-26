@@ -30,9 +30,8 @@ public final class TreeCommand implements Command{
             Repository repo = Repository.load(Path.of(".minigit"));
             Map<Path, String> trackedFiles = repo.getTrackedFiles();
             List<Tree> trees = Tree.buildTree(trackedFiles);
-            IO.println("\nPrinting descriptions");
+            IO.println("\nPrinting descriptions:");
             for (Tree tree : trees) {
-                IO.println("Tree hash: " + tree.miniGitSha1() + " contents: ");
                 IO.println(tree.getDescription());
             }
             trees.forEach(repo::storeInternally);

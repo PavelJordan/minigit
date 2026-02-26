@@ -56,9 +56,9 @@ public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob,
 
     protected void writeBytes(byte[] bytes, Path path) throws IOException{
         if (Files.exists(path)) {
-            IO.println("Object already exists with hash [" + miniGitSha1() + "] at " + path + ". Skipping write.");
             return;
         }
+        IO.println("Object written with hash [" + miniGitSha1() + "]");
         Files.createDirectories(path.getParent());
         try(var out = new BufferedOutputStream(Files.newOutputStream(path))) {
             out.write(bytes);
