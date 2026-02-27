@@ -33,10 +33,13 @@ public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob,
         if (Arrays.equals(header, TREE_HEADER)) {
             return new Tree(contentsBuff.toByteArray());
         }
+        if  (Arrays.equals(header, COMMIT_HEADER)) {
+            return new Commit(contentsBuff.toByteArray());
+        }
         throw new IOException("Unknown object type: {" + new String(header) + "]}.");
     }
 
-    public static void saveObjectBasedOnHash(Path objectsPath, String hash, MiniGitObject obj) throws IOException {
+    static void saveObjectBasedOnHash(Path objectsPath, String hash, MiniGitObject obj) throws IOException {
         Path objPath = objectsPath.resolve(Path.of(hash.substring(0, 2), hash.substring(2)));
         obj.write(objPath);
     }

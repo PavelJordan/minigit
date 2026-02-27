@@ -51,6 +51,7 @@ public final class RestoreCommand implements Command{
                     }
                 }
             }
+            IO.println("Restored to last saved index state");
         } catch (IOException e) {
             IO.println(e);
             return 1;

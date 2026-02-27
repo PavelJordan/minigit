@@ -1,14 +1,13 @@
 package cz.cuni.mff.jordanpa.minigit.commands;
 
-import cz.cuni.mff.jordanpa.minigit.structures.Blob;
+import cz.cuni.mff.jordanpa.minigit.structures.Head;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 
 public final class StatusCommand implements Command {
     @Override
@@ -23,43 +22,141 @@ public final class StatusCommand implements Command {
 
     @Override
     public String help() {
-        return "Print the status of the current index";
+        return "Print the status of the current repository";
     }
 
     @Override
     public int execute(String[] args) {
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
-            List<Repository.FileStatus> statuses = repo.getStatus();
 
-            var untrackedPaths = statuses.stream().filter(fileStatus -> fileStatus.status() == Repository.FileStatusType.UNTRACKED).map(Repository.FileStatus::path).toList();
-            var modifiedPaths = statuses.stream().filter(fileStatus -> fileStatus.status() == Repository.FileStatusType.MODIFIED).map(Repository.FileStatus::path).toList();
-            var deletedPaths = statuses.stream().filter(fileStatus -> fileStatus.status() == Repository.FileStatusType.DELETED).map(Repository.FileStatus::path).toList();
-            var trackedPaths = statuses.stream().filter(fileStatus -> fileStatus.status() == Repository.FileStatusType.TRACKED).map(Repository.FileStatus::path).toList();
+            List<Repository.FileStatus> workToIndex = repo.getStatusWorkingToIndex();
+            List<Repository.FileStatus> indexToHead = repo.getStatusIndexToCommit();
 
-            if (!untrackedPaths.isEmpty()) {
-                IO.println("Untracked files:");
-                untrackedPaths.forEach(IO::println);
-                IO.println("_____________");
+            boolean hasHead = repo.getHead().type() != Head.Type.UNSET;
+
+            var w = groupByType(workToIndex);
+            var h = groupByType(indexToHead);
+
+            int stagedAdded = size(h.get(Repository.FileStatusType.UNTRACKED)); // "new in index" vs HEAD
+            int stagedModified = size(h.get(Repository.FileStatusType.MODIFIED));
+            int stagedDeleted = size(h.get(Repository.FileStatusType.DELETED));
+
+            int unstagedModified = size(w.get(Repository.FileStatusType.MODIFIED));
+            int unstagedDeleted = size(w.get(Repository.FileStatusType.DELETED));
+
+            int untracked = size(w.get(Repository.FileStatusType.UNTRACKED));
+
+            IO.println("Status");
+            IO.println("  HEAD: " + (hasHead ? "set" : "no commits yet"));
+            IO.println("  Summary: staged " + (stagedAdded + stagedModified + stagedDeleted)
+                    + ", not staged " + (unstagedModified + unstagedDeleted)
+                    + ", untracked " + untracked);
+            IO.println("");
+
+            boolean printedAnything = false;
+
+            // 1) Staged (index -> HEAD)
+            String stagedTitle = hasHead ? "Staged changes (will be committed)" : "Staged changes (first commit)";
+            printedAnything |= printChangeSection(
+                    stagedTitle,
+                    h,
+                    /*includeAddedFromUntracked=*/true
+            );
+
+            // 2) Not staged (working -> index) (excluding UNTRACKED, printed separately)
+            printedAnything |= printWorkingSection(
+                    "Changes not staged for commit",
+                    w
+            );
+
+            // 3) Untracked (working -> index)
+            printedAnything |= printFlatSection(
+                    "Untracked files",
+                    "?",
+                    w.get(Repository.FileStatusType.UNTRACKED)
+            );
+
+            if (!printedAnything) {
+                IO.println("Working tree clean.");
             }
-            if (!modifiedPaths.isEmpty()) {
-                IO.println("Modified tracked files:");
-                modifiedPaths.forEach(IO::println);
-                IO.println("_____________");
-            }
-            if (!deletedPaths.isEmpty()) {
-                IO.println("Deleted tracked files:");
-                deletedPaths.forEach(IO::println);
-                IO.println("_____________");
-            }
-            IO.println("Up-to-date tracked files:");
-            trackedPaths.forEach(IO::println);
-            IO.println("_____________");
+
             return 0;
-        }
-        catch(IOException e) {
+        } catch (IOException e) {
             IO.println(e);
             return 1;
         }
+    }
+
+    private static EnumMap<Repository.FileStatusType, List<Path>> groupByType(List<Repository.FileStatus> statuses) {
+        var map = new EnumMap<Repository.FileStatusType, List<Path>>(Repository.FileStatusType.class);
+        for (var t : Repository.FileStatusType.values()) {
+            map.put(t, new ArrayList<>());
+        }
+        for (var s : statuses) {
+            map.get(s.status()).add(s.path());
+        }
+        return map;
+    }
+
+    private static int size(List<Path> paths) {
+        return paths == null ? 0 : paths.size();
+    }
+
+    private static boolean printChangeSection(
+            String title,
+            EnumMap<Repository.FileStatusType, List<Path>> grouped,
+            boolean includeAddedFromUntracked
+    ) {
+        List<Path> added = includeAddedFromUntracked ? grouped.get(Repository.FileStatusType.UNTRACKED) : List.of();
+        List<Path> modified = grouped.get(Repository.FileStatusType.MODIFIED);
+        List<Path> deleted = grouped.get(Repository.FileStatusType.DELETED);
+
+        if (size(added) == 0 && size(modified) == 0 && size(deleted) == 0) return false;
+
+        IO.println(title + ":");
+        printIndentedGroup("Added", "+", added);
+        printIndentedGroup("Modified", "~", modified);
+        printIndentedGroup("Deleted", "-", deleted);
+        IO.println("");
+        return true;
+    }
+
+    private static boolean printWorkingSection(
+            String title,
+            EnumMap<Repository.FileStatusType, List<Path>> grouped
+    ) {
+        List<Path> modified = grouped.get(Repository.FileStatusType.MODIFIED);
+        List<Path> deleted = grouped.get(Repository.FileStatusType.DELETED);
+
+        if (size(modified) == 0 && size(deleted) == 0) return false;
+
+        IO.println(title + ":");
+        printIndentedGroup("Modified", "~", modified);
+        printIndentedGroup("Deleted", "-", deleted);
+        IO.println("");
+        return true;
+    }
+
+    private static void printIndentedGroup(String groupName, String symbol, List<Path> paths) {
+        if (paths == null || paths.isEmpty()) return;
+
+        IO.println("  " + groupName + ":");
+        paths.stream()
+                .map(Path::toString)
+                .sorted()
+                .forEach(p -> IO.println("    " + symbol + " " + p));
+    }
+
+    private static boolean printFlatSection(String title, String symbol, List<Path> paths) {
+        if (paths == null || paths.isEmpty()) return false;
+
+        IO.println(title + ":");
+        paths.stream()
+                .map(Path::toString)
+                .sorted()
+                .forEach(p -> IO.println("  " + symbol + " " + p));
+        IO.println("");
+        return true;
     }
 }

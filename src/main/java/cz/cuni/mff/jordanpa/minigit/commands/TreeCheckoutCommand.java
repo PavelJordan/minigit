@@ -41,6 +41,7 @@ public final class TreeCheckoutCommand implements Command{
                 return 1;
             }
             repo.save();
+            IO.println("Currently at tree " +  treeHash);
         } catch (IOException e) {
             IO.println(e);
             return 1;
