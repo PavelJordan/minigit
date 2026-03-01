@@ -23,6 +23,10 @@ public final class AddCommand implements Command{
 
     @Override
     public int execute(String[] args) {
+        if (args.length == 0) {
+            IO.println("Incorrect number of arguments. Provide at least 1 file to add.");
+            return 1;
+        }
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
             for (String arg : args) {

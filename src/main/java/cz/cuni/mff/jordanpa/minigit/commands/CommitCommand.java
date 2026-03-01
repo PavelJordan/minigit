@@ -45,7 +45,7 @@ public final class CommitCommand implements Command{
             Map<Path, String> trackedFiles = repo.getTrackedFiles();
             List<Tree> trees = Tree.buildTree(trackedFiles);
             Commit commit = getCommit(trees, repo, args[0]);
-            repo.addCommitAsNewHeadAndStoreInternally(commit);
+            repo.setCommitAsNewHeadAndStoreInternally(commit);
             trees.forEach(repo::storeInternally);
             repo.save();
             IO.println("Successfully committed. Commit hash is: " + commit.miniGitSha1());

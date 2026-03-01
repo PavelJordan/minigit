@@ -66,11 +66,14 @@ public final class Repository {
         }
     }
 
-    public MiniGitObject loadFromInternal(String hash) {
-        if (!objects.containsKey(hash)) {
+    public MiniGitObject loadFromInternal(String hashOrName) {
+        if (references.containsKey(hashOrName)) {
+            throw new RuntimeException("References are not supported yet.");
+        }
+        if (!objects.containsKey(hashOrName)) {
             try {
-                MiniGitObject obj = MiniGitObject.getObjectBasedOnHash(objectsPath, hash);
-                objects.put(hash, obj);
+                MiniGitObject obj = MiniGitObject.getObjectBasedOnHash(objectsPath, hashOrName);
+                objects.put(hashOrName, obj);
             }
             catch(IOException e) {
                 IO.println(e);
@@ -78,7 +81,7 @@ public final class Repository {
                 return null;
             }
         }
-        return objects.get(hash);
+        return objects.get(hashOrName);
     }
 
     public void save() throws IOException {
@@ -297,7 +300,7 @@ public final class Repository {
         return paths;
     }
 
-    public void addCommitAsNewHeadAndStoreInternally(Commit commit) {
+    public void setCommitAsNewHeadAndStoreInternally(Commit commit) {
         head = new Head(Head.Type.COMMIT, commit.miniGitSha1());
         storeInternally(commit);
     }
