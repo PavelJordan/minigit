@@ -10,10 +10,10 @@ import java.util.*;
 public final class Repository {
 
     public enum FileStatusType {
-        TRACKED,
+        SAME,
         MODIFIED,
         DELETED,
-        UNTRACKED
+        NEW
     }
 
     public record FileStatus(Path path, FileStatusType status) {}
@@ -180,18 +180,18 @@ public final class Repository {
     public void checkoutTree(Tree treeToRestore) throws IOException {
         List<FileStatus> statusesStaged = getWorkingToIndexStatus();
         List<FileStatus> statusesCommited = getStagedToLastCommitStatus();
-        if (statusesStaged.stream().anyMatch(status -> status.status() != FileStatusType.TRACKED && status.status() != FileStatusType.UNTRACKED)) {
+        if (statusesStaged.stream().anyMatch(status -> status.status() != FileStatusType.SAME && status.status() != FileStatusType.NEW)) {
             throw new IOException("Cannot restore tree. There are unstaged uncommitted changes.");
         }
-        if (statusesCommited.stream().anyMatch(status -> status.status() != FileStatusType.TRACKED && status.status() != FileStatusType.UNTRACKED)) {
+        if (statusesCommited.stream().anyMatch(status -> status.status() != FileStatusType.SAME && status.status() != FileStatusType.NEW)) {
             throw new IOException("Cannot restore tree. There are staged uncommitted changes.");
         }
         Tree CurrentRoot = Tree.buildTree(stagedIndex).getLast();
         if (loadFromInternal(CurrentRoot.miniGitSha1()) == null) {
             throw new IOException("Cannot restore tree. Current root tree is not in repository. Use tree command to build it.");
         }
-        for (FileStatus status : statusesStaged.stream().filter(s -> s.status() == FileStatusType.TRACKED).toList()) {
-            if (status.status() == FileStatusType.TRACKED) {
+        for (FileStatus status : statusesStaged.stream().filter(s -> s.status() == FileStatusType.SAME).toList()) {
+            if (status.status() == FileStatusType.SAME) {
                 IO.println("Deleting tracked file " + status.path());
                 Files.delete(status.path());
             }
@@ -267,14 +267,14 @@ public final class Repository {
             FileStatusType againstCommit;
             if (indexToCompare.containsKey(path)) {
                 if (indexToCompare.get(path).equals(workingDirectoryHash)) {
-                    againstCommit = FileStatusType.TRACKED;
+                    againstCommit = FileStatusType.SAME;
                 }
                 else {
                     againstCommit = FileStatusType.MODIFIED;
                 }
             }
             else {
-                againstCommit = FileStatusType.UNTRACKED;
+                againstCommit = FileStatusType.NEW;
             }
             statuses.add(new FileStatus(path, againstCommit));
         }
@@ -365,5 +365,23 @@ public final class Repository {
             out.write(author.name() + "\n");
             out.write(author.email() + "\n");
         }
+    }
+
+    public void showTreeDiff(Tree baseTree, Tree treeToCompare) {
+        IO.println("The tree " + treeToCompare.miniGitSha1() + " has changed from " + baseTree.miniGitSha1() + " in the following way:");
+        HashMap<Path, String> baseTreeIndex = getIndexOfTree(baseTree);
+        HashMap<Path, String> treeToCompareIndex = getIndexOfTree(treeToCompare);
+        getFileStatusesFromComparison(treeToCompareIndex, baseTreeIndex).forEach(status -> {
+            if (status.status() != FileStatusType.SAME) {
+                IO.println(status.path() + " (" + status.status() + ")");
+            }
+        });
+    }
+
+    public void showTreeDiff(Tree commitTree) {
+        IO.println("The tree " + commitTree.miniGitSha1() + " added:");
+        getIndexOfTree(commitTree).forEach((path, hash) -> {
+            IO.println(path + " (" + hash + ")");
+        });
     }
 }

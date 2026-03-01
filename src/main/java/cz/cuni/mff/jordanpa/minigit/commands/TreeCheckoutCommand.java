@@ -20,7 +20,7 @@ public final class TreeCheckoutCommand implements Command{
 
     @Override
     public String help() {
-        return "Checkout a tree object from the repository database. Provide one hash.";
+        return "Checkout a tree object from the repository database. Provide one hash. HEAD stays - you can rollback this way by commiting later.";
     }
 
     @Override

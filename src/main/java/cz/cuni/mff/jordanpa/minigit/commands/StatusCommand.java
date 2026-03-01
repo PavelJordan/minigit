@@ -40,14 +40,14 @@ public final class StatusCommand implements Command {
             var w = groupByType(workToIndex);
             var h = groupByType(indexToHead);
 
-            int stagedAdded = size(h.get(Repository.FileStatusType.UNTRACKED)); // "new in index" vs HEAD
+            int stagedAdded = size(h.get(Repository.FileStatusType.NEW)); // "new in index" vs HEAD
             int stagedModified = size(h.get(Repository.FileStatusType.MODIFIED));
             int stagedDeleted = size(h.get(Repository.FileStatusType.DELETED));
 
             int unstagedModified = size(w.get(Repository.FileStatusType.MODIFIED));
             int unstagedDeleted = size(w.get(Repository.FileStatusType.DELETED));
 
-            int untracked = size(w.get(Repository.FileStatusType.UNTRACKED));
+            int untracked = size(w.get(Repository.FileStatusType.NEW));
 
             IO.println("Status");
             IO.println("  HEAD: " + (hasHead ? "set" : "no commits yet"));
@@ -76,7 +76,7 @@ public final class StatusCommand implements Command {
             printedAnything |= printFlatSection(
                     "Untracked files",
                     "?",
-                    w.get(Repository.FileStatusType.UNTRACKED)
+                    w.get(Repository.FileStatusType.NEW)
             );
 
             if (!printedAnything) {
@@ -110,7 +110,7 @@ public final class StatusCommand implements Command {
             EnumMap<Repository.FileStatusType, List<Path>> grouped,
             boolean includeAddedFromUntracked
     ) {
-        List<Path> added = includeAddedFromUntracked ? grouped.get(Repository.FileStatusType.UNTRACKED) : List.of();
+        List<Path> added = includeAddedFromUntracked ? grouped.get(Repository.FileStatusType.NEW) : List.of();
         List<Path> modified = grouped.get(Repository.FileStatusType.MODIFIED);
         List<Path> deleted = grouped.get(Repository.FileStatusType.DELETED);
 

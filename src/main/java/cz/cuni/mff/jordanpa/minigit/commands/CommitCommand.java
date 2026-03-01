@@ -43,7 +43,7 @@ public final class CommitCommand implements Command{
                 return 1;
             }
             List<Repository.FileStatus> stagedToLastCommitStatus = repo.getStagedToLastCommitStatus();
-            if (stagedToLastCommitStatus.stream().allMatch(status -> status.status() == Repository.FileStatusType.TRACKED)) {
+            if (stagedToLastCommitStatus.stream().allMatch(status -> status.status() == Repository.FileStatusType.SAME)) {
                 IO.println("There is nothing to commit.");
                 return 0;
             }

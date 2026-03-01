@@ -35,7 +35,7 @@ public final class Tree extends MiniGitObject implements TreeContent {
     /**
      * Map name -> hash + type of tree content.
      */
-    private final HashMap<String, TreeEntry> contents = new HashMap<>();
+    private final SortedMap<String, TreeEntry> contents = new TreeMap<>();
 
     /**
      * Map name -> hash + type of tree content.
