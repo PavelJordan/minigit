@@ -335,4 +335,10 @@ public final class Repository {
         }
         return workingDirIndex;
     }
+
+    public void unstageToLastCommit() throws IOException {
+        ensureIndexLoaded();
+        ensureHeadLoaded();
+        stagedIndex = getCommitIndexFromHead();
+    }
 }
