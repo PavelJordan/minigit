@@ -31,15 +31,24 @@ public final class CheckoutCommand implements Command{
             return 1;
         }
         try {
+            String checkoutTo = args[0];
             Repository repo = Repository.load(Path.of(".minigit"));
-            MiniGitObject obj = repo.loadFromInternal(args[0]);
+            MiniGitObject obj = repo.loadFromInternal(checkoutTo);
             if (obj instanceof Commit commit) {
                 MiniGitObject maybeTree = repo.loadFromInternal(commit.getTreeHash());
                 if (maybeTree instanceof Tree tree) {
                     repo.checkoutTree(tree);
-                    repo.setCommitAsNewHeadAndStoreInternally(commit);
+                    if (repo.isNameInReferences(checkoutTo)) {
+                        repo.setRef(checkoutTo, commit.miniGitSha1());
+                        repo.setHeadToRef(checkoutTo);
+                        IO.println("Currently at branch " + checkoutTo);
+                    }
+                    else {
+                        repo.setHeadToCommit(commit);
+                        IO.println("HEAD at detached state");
+                    }
                     repo.save();
-                    IO.println("Currently at commit " + commit.miniGitSha1());
+                    IO.println("Working tree is commit " + commit.miniGitSha1());
                 }
             }
             else {

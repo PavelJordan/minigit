@@ -35,8 +35,7 @@ public final class Repository {
     private final Path refPath;
     private Head head;
 
-    public Head getHead() throws IOException {
-        ensureHeadLoaded();
+    public Head getHead(){
         return head;
     }
 
@@ -54,8 +53,7 @@ public final class Repository {
         this.refPath = path.resolve("refs");
     }
 
-    public Map<String, String> getReferences() throws IOException {
-        ensureRefLoaded();
+    public Map<String, String> getReferences() {
         return Map.copyOf(references);
     }
 
@@ -63,7 +61,11 @@ public final class Repository {
         if (!Files.exists(loadFrom)) {
             throw new IOException("Repository does not exist.");
         }
-        return new Repository(loadFrom);
+        Repository repo = new Repository(loadFrom);
+        repo.loadHead();
+        repo.loadRef();
+        repo.loadIndex();
+        return repo;
     }
 
 
@@ -73,14 +75,12 @@ public final class Repository {
         }
     }
 
-    public MiniGitObject loadFromInternal(String hashOrName) {
-        if (references.containsKey(hashOrName)) {
-            throw new RuntimeException("References are not supported yet.");
-        }
-        if (!objects.containsKey(hashOrName)) {
+    public MiniGitObject loadFromInternal(String hashOrName) throws IOException {
+        String hash = references.getOrDefault(hashOrName, hashOrName);
+        if (!objects.containsKey(hash)) {
             try {
-                MiniGitObject obj = MiniGitObject.getObjectBasedOnHash(objectsPath, hashOrName);
-                objects.put(hashOrName, obj);
+                MiniGitObject obj = MiniGitObject.getObjectBasedOnHash(objectsPath, hash);
+                objects.put(hash, obj);
             }
             catch(IOException e) {
                 IO.println(e);
@@ -88,7 +88,7 @@ public final class Repository {
                 return null;
             }
         }
-        return objects.get(hashOrName);
+        return objects.get(hash);
     }
 
     public void save() throws IOException {
@@ -103,8 +103,7 @@ public final class Repository {
         saveRef();
     }
 
-    public void addToIndex(Path... files) throws IOException {
-        ensureIndexLoaded();
+    public void addToIndex(Path... files) {
         for (Path file : files) {
             try {
                 if (!Files.exists(file)) {
@@ -125,10 +124,7 @@ public final class Repository {
     /**
      * Loads the index from the disk (path -> blob data).
      */
-    private void ensureIndexLoaded() throws IOException {
-        if (stagedIndex != null) {
-            return;
-        }
+    private void loadIndex() throws IOException {
         stagedIndex = new HashMap<>();
         try(Scanner scanner = new Scanner(indexPath)) {
             while (scanner.hasNextLine()) {
@@ -170,10 +166,8 @@ public final class Repository {
         }
     }
 
-    private void ensureHeadLoaded() throws IOException {
-        if (head == null) {
-            head = Head.loadHead(headPath);
-        }
+    private void loadHead() throws IOException {
+        head = Head.loadHead(headPath);
     }
 
     private void saveRef() throws IOException {
@@ -188,8 +182,8 @@ public final class Repository {
         }
     }
 
-    private void ensureRefLoaded() throws IOException {
-        if (!references.isEmpty() || !Files.exists(refPath)) {
+    private void loadRef() throws IOException {
+        if (!Files.exists(refPath)) {
             return;
         }
         try (var in = Files.newBufferedReader(refPath)) {
@@ -204,8 +198,7 @@ public final class Repository {
     }
 
 
-    public Map<Path, String> getTrackedFiles() throws IOException {
-        ensureIndexLoaded();
+    public Map<Path, String> getTrackedFiles(){
         return Map.copyOf(stagedIndex);
     }
 
@@ -222,6 +215,10 @@ public final class Repository {
         if (loadFromInternal(CurrentRoot.miniGitSha1()) == null) {
             throw new IOException("Cannot restore tree. Current root tree is not in repository. Use tree command to build it.");
         }
+        if (CurrentRoot.miniGitSha1().equals(treeToRestore.miniGitSha1())) {
+            IO.println("Tree is already checked out.");
+            return;
+        }
         for (FileStatus status : statusesStaged.stream().filter(s -> s.status() == FileStatusType.SAME).toList()) {
             if (status.status() == FileStatusType.SAME) {
                 IO.println("Deleting tracked file " + status.path());
@@ -233,7 +230,7 @@ public final class Repository {
         internalForcedCheckoutTree();
     }
 
-    private void internalForcedCheckoutTree() {
+    private void internalForcedCheckoutTree() throws IOException {
         for (HashMap.Entry<Path, String> entry : stagedIndex.entrySet()) {
             MiniGitObject possibleBlobToRestore = loadFromInternal(entry.getValue());
             if (possibleBlobToRestore instanceof Blob blobToRestore) {
@@ -255,39 +252,38 @@ public final class Repository {
     }
 
     public List<FileStatus> getStagedToLastCommitStatus() throws IOException {
-        ensureHeadLoaded();
-        ensureIndexLoaded();
         HashMap<Path, String> commitIndex = getCommitIndexFromHead();
         return getFileStatusesFromComparison(stagedIndex, commitIndex);
     }
 
     private HashMap<Path, String> getCommitIndexFromHead() throws IOException {
-        if (head.type() == Head.Type.COMMIT) {
-            MiniGitObject maybeCommit = loadFromInternal(head.data());
-            if (maybeCommit instanceof Commit commit) {
-                MiniGitObject maybeTree = loadFromInternal(commit.getTreeHash());
-                if (maybeTree instanceof Tree tree) {
-                    return getIndexOfTree(tree);
-                }
-                else {
-                    throw new IOException("Cannot restore tree. Tree is not in repository.");
-                }
-            }
-            else {
-                throw new IOException("Cannot restore head.");
-            }
+        String hash;
+        if (head.type() == Head.Type.BRANCH) {
+             hash = references.get(head.data());
         }
-        else if (head.type() == Head.Type.BRANCH) {
-            throw new IOException("Cannot restore branch. Not implemented yet");
+        else if (head.type() == Head.Type.COMMIT) {
+             hash = head.data();
         }
         else {
             IO.println("No commit yet");
             return new HashMap<>();
         }
+        MiniGitObject maybeCommit = loadFromInternal(hash);
+        if (maybeCommit instanceof Commit commit) {
+            MiniGitObject maybeTree = loadFromInternal(commit.getTreeHash());
+            if (maybeTree instanceof Tree tree) {
+                return getIndexOfTree(tree);
+            }
+            else {
+                throw new IOException("Cannot restore tree. Tree is not in repository.");
+            }
+        }
+        else {
+            throw new IOException("Cannot restore head.");
+        }
     }
 
     public List<FileStatus> getWorkingToIndexStatus() throws IOException {
-        ensureIndexLoaded();
         HashMap<Path, String> workingDirIndex = getIndexOfWorkingDirectory();
         return getFileStatusesFromComparison(workingDirIndex, stagedIndex);
     }
@@ -336,33 +332,40 @@ public final class Repository {
         return paths;
     }
 
-    public void setCommitAsNewHeadAndStoreInternally(Commit commit) {
+    public void setHeadToCommit(Commit commit) {
         head = new Head(Head.Type.COMMIT, commit.miniGitSha1());
-        storeInternally(commit);
     }
 
-    HashMap<Path, String> getIndexOfTree(Tree tree) {
+    public void setHeadToRef(String checkoutTo) {
+        head = new Head(Head.Type.BRANCH, checkoutTo);
+    }
+
+    HashMap<Path, String> getIndexOfTree(Tree tree) throws IOException {
         return getIndexOfTreeInternal(tree, Path.of("./"));
     }
 
-    private HashMap<Path, String> getIndexOfTreeInternal(Tree tree, Path pathSoFar) {
+    private HashMap<Path, String> getIndexOfTreeInternal(Tree tree, Path pathSoFar) throws IOException {
         HashMap<Path, String> treeIndex = new HashMap<>();
-        tree.getContents().forEach((name, entry) -> {
-            if (entry.type() == Tree.TreeEntryType.TREE) {
-                MiniGitObject possiblySubtreeToRestore = loadFromInternal(entry.hash());
+        for (Map.Entry<String, Tree.TreeEntry> entry : tree.getContents().entrySet()) {
+            String name = entry.getKey();
+            Tree.TreeEntry value = entry.getValue();
+            if (value.type() == Tree.TreeEntryType.TREE) {
+                MiniGitObject possiblySubtreeToRestore = loadFromInternal(value.hash());
                 if (possiblySubtreeToRestore instanceof Tree subtreeToRestore) {
                     treeIndex.putAll(getIndexOfTreeInternal(subtreeToRestore, pathSoFar.resolve(name)));
-                }
-                else {
+                } else {
                     IO.println("Object with specified data is not a tree, even though it should. Repository is corrupted.");
                 }
-            }
-            else if (entry.type() == Tree.TreeEntryType.BLOB) {
-                treeIndex.put(pathSoFar.resolve(name).normalize(), entry.hash());
+            } else if (value.type() == Tree.TreeEntryType.BLOB) {
+                treeIndex.put(pathSoFar.resolve(name).normalize(), value.hash());
 
             }
-        });
+        }
         return treeIndex;
+    }
+
+    public boolean isNameInReferences(String name) {
+        return references.containsKey(name);
     }
 
     public HashMap<Path, String> getIndexOfWorkingDirectory() throws IOException {
@@ -376,8 +379,6 @@ public final class Repository {
     }
 
     public void unstageToLastCommit() throws IOException {
-        ensureIndexLoaded();
-        ensureHeadLoaded();
         stagedIndex = getCommitIndexFromHead();
     }
 
@@ -399,7 +400,7 @@ public final class Repository {
         }
     }
 
-    public void showTreeDiff(Tree baseTree, Tree treeToCompare) {
+    public void showTreeDiff(Tree baseTree, Tree treeToCompare) throws IOException{
         IO.println("The tree " + treeToCompare.miniGitSha1() + " has changed from " + baseTree.miniGitSha1() + " in the following way:");
         HashMap<Path, String> baseTreeIndex = getIndexOfTree(baseTree);
         HashMap<Path, String> treeToCompareIndex = getIndexOfTree(treeToCompare);
@@ -410,15 +411,14 @@ public final class Repository {
         });
     }
 
-    public void showTreeDiff(Tree commitTree) {
+    public void showTreeDiff(Tree commitTree) throws IOException {
         IO.println("The tree " + commitTree.miniGitSha1() + " added:");
         getIndexOfTree(commitTree).forEach((path, hash) -> {
             IO.println(path + " (" + hash + ")");
         });
     }
 
-    public void setRef(String arg, String hash) throws IOException {
-        ensureRefLoaded();
+    public void setRef(String arg, String hash){
         references.put(arg, hash);
     }
 }

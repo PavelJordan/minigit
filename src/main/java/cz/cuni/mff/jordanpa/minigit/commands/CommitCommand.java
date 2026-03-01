@@ -50,8 +50,15 @@ public final class CommitCommand implements Command{
             Map<Path, String> trackedFiles = repo.getTrackedFiles();
             List<Tree> trees = Tree.buildTree(trackedFiles);
             Commit commit = getCommit(trees, repo, args[0], author);
-            repo.setCommitAsNewHeadAndStoreInternally(commit);
+            repo.storeInternally(commit);
             trees.forEach(repo::storeInternally);
+            if (repo.getHead().type() == Head.Type.BRANCH) {
+                repo.setRef(repo.getHead().data(), commit.miniGitSha1());
+                repo.setHeadToRef(repo.getHead().data());
+            }
+            else {
+                repo.setHeadToCommit(commit);
+            }
             repo.save();
             IO.println("Successfully committed. Commit data is: " + commit.miniGitSha1());
         } catch (IOException e) {
@@ -67,7 +74,7 @@ public final class CommitCommand implements Command{
         return switch (currentHead.type()) {
             case COMMIT -> new Commit(rootTree.miniGitSha1(), currentHead.data(), author, message, Date.from(Instant.now()));
             case UNSET -> new Commit(rootTree.miniGitSha1(), null, author, message, Date.from(Instant.now()));
-            case BRANCH -> throw new IOException("Cannot commit on a branch. Not implemented yet.");
+            case BRANCH -> new Commit(rootTree.miniGitSha1(), repo.getReferences().get(currentHead.data()), author, message, Date.from(Instant.now()));
         };
     }
 }

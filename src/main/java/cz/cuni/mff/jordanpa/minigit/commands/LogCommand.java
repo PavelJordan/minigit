@@ -35,22 +35,22 @@ public final class LogCommand implements Command{
                 IO.println("No commits yet.");
                 return 0;
             }
-            if (currentHead.type() == Head.Type.BRANCH) {
-                IO.println("Not implemented yet.");
-                return 0;
-            }
-            String currentCommit = currentHead.data();
+            String currentCommitHash = switch (currentHead.type()) {
+                case BRANCH -> repo.getReferences().get(currentHead.data());
+                case COMMIT -> currentHead.data();
+                case null, default -> throw new RuntimeException("Head type is not supported.");
+            };
             Map<String, String> refs = repo.getReferences();
-            while (currentCommit != null) {
-                Commit commit = (Commit) repo.loadFromInternal(currentCommit);
+            while (currentCommitHash != null) {
+                Commit commit = (Commit) repo.loadFromInternal(currentCommitHash);
                 assert commit != null;
                 IO.println(commit.getAnnotatedDescription(refs, currentHead));
                 String[] parents = commit.getParents();
                 if (parents.length == 1) {
-                    currentCommit = parents[0];
+                    currentCommitHash = parents[0];
                 }
                 else if (parents.length == 0) {
-                    currentCommit = null;
+                    currentCommitHash = null;
                 }
                 else {
                     IO.println("Commit chain is branched - cannot handle that yet");

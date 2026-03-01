@@ -51,6 +51,14 @@ public final class StatusCommand implements Command {
 
             IO.println("Status");
             IO.println("  HEAD: " + (hasHead ? "set" : "no commits yet"));
+            if (hasHead) {
+                if (repo.getHead().type() == Head.Type.BRANCH) {
+                    IO.println("  Branch: " + repo.getHead().data());
+                }
+                else {
+                    IO.println("  DETACHED at Commit: " + repo.getHead().data());
+                }
+            }
             IO.println("  Summary: staged " + (stagedAdded + stagedModified + stagedDeleted)
                     + ", not staged " + (unstagedModified + unstagedDeleted)
                     + ", untracked " + untracked);

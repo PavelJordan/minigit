@@ -91,7 +91,7 @@ public final class Commit extends MiniGitObject {
         String hashStr = "Commit Hash: " + miniGitSha1();
         StringBuilder hashStrEnd = new StringBuilder();
         if (head != null && head.type() == Head.Type.COMMIT && head.data().equals(miniGitSha1())) {
-            hashStrEnd.append(" (HEAD)");
+            hashStrEnd.append(" (DETACHED HEAD)");
         }
         for (Map.Entry<String, String> entry : nameToHashReferences.entrySet()) {
             if (entry.getValue().equals(miniGitSha1())) {
