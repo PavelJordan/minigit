@@ -38,6 +38,10 @@ public final class ShowCommand implements Command {
                 return 1;
             }
             Tree commitTree = (Tree) repo.loadFromInternal(commit.getTreeHash());
+            if (commitTree == null) {
+                IO.println("Commit tree is not in repository. That means repo is corrupted.");
+                return 1;
+            }
             String[] parentCommits = commit.getParents();
             if (parentCommits.length > 1) {
                 IO.println("Merge commits do not have diffs (not supported yet?).");
@@ -48,7 +52,15 @@ public final class ShowCommand implements Command {
                 return 0;
             }
             Commit parent = (Commit) repo.loadFromInternal(commit.getParents()[0]);
+            if (parent == null) {
+                IO.println("Parent commit is not in repository. That means repo is corrupted.");
+                return 1;
+            }
             Tree baseTree = (Tree) repo.loadFromInternal(parent.getTreeHash());
+            if (baseTree == null) {
+                IO.println("Base tree is not in repository. That means repo is corrupted.");
+                return 1;
+            }
             repo.showTreeDiff(baseTree, commitTree);
         } catch (IOException e) {
             throw new RuntimeException(e);
