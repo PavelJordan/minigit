@@ -11,3 +11,4 @@ cz.cuni.mff.jordanpa.minigit.commands.CommitCommand
 cz.cuni.mff.jordanpa.minigit.commands.LogCommand
 cz.cuni.mff.jordanpa.minigit.commands.RestoreStagedCommand
 cz.cuni.mff.jordanpa.minigit.commands.CheckoutCommand
+cz.cuni.mff.jordanpa.minigit.commands.AuthorCommand

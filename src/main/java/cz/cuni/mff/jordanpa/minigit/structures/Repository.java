@@ -1,5 +1,7 @@
 package cz.cuni.mff.jordanpa.minigit.structures;
 
+import cz.cuni.mff.jordanpa.minigit.misc.Author;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +31,7 @@ public final class Repository {
     private final Path objectsPath;
     private final Path indexPath;
     private final Path headPath;
+    private final Path authorPath; // Not in remote!
     private Head head;
 
     public Head getHead() throws IOException {
@@ -46,6 +49,7 @@ public final class Repository {
         this.objectsPath = path.resolve("objects");
         this.indexPath = path.resolve("index");
         this.headPath = path.resolve("HEAD");
+        this.authorPath = path.resolve("author");
     }
 
     public Map<String, String> getReferences() {
@@ -343,5 +347,23 @@ public final class Repository {
         ensureIndexLoaded();
         ensureHeadLoaded();
         stagedIndex = getCommitIndexFromHead();
+    }
+
+    public Author loadCurrentAuthor() throws IOException {
+        if (!Files.exists(authorPath)) {
+            return null;
+        }
+        try(var in = Files.newBufferedReader(authorPath)) {
+            String name = in.readLine();
+            String email = in.readLine();
+            return new Author(name, email);
+        }
+    }
+
+    public void setCurrentAuthor(Author author) throws IOException {
+        try(var out = Files.newBufferedWriter(authorPath)) {
+            out.write(author.name() + "\n");
+            out.write(author.email() + "\n");
+        }
     }
 }

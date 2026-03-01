@@ -37,6 +37,11 @@ public final class CommitCommand implements Command{
         }
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
+            Author author = repo.loadCurrentAuthor();
+            if (author == null) {
+                IO.println("No author set. Use 'minigit author <name> <email>' to set one.");
+                return 1;
+            }
             List<Repository.FileStatus> stagedToLastCommitStatus = repo.getStagedToLastCommitStatus();
             if (stagedToLastCommitStatus.stream().allMatch(status -> status.status() == Repository.FileStatusType.TRACKED)) {
                 IO.println("There is nothing to commit.");
@@ -44,7 +49,7 @@ public final class CommitCommand implements Command{
             }
             Map<Path, String> trackedFiles = repo.getTrackedFiles();
             List<Tree> trees = Tree.buildTree(trackedFiles);
-            Commit commit = getCommit(trees, repo, args[0]);
+            Commit commit = getCommit(trees, repo, args[0], author);
             repo.setCommitAsNewHeadAndStoreInternally(commit);
             trees.forEach(repo::storeInternally);
             repo.save();
@@ -55,13 +60,13 @@ public final class CommitCommand implements Command{
         return 0;
     }
 
-    private static Commit getCommit(List<Tree> trees, Repository repo, String message) throws IOException {
+    private static Commit getCommit(List<Tree> trees, Repository repo, String message, Author author) throws IOException {
         Tree rootTree = trees.getLast();
         Head currentHead = repo.getHead();
 
         return switch (currentHead.type()) {
-            case COMMIT -> new Commit(rootTree.miniGitSha1(), currentHead.hash(), Author.getDefaultAuthor(), message, Date.from(Instant.now()));
-            case UNSET -> new Commit(rootTree.miniGitSha1(), null, Author.getDefaultAuthor(), message, Date.from(Instant.now()));
+            case COMMIT -> new Commit(rootTree.miniGitSha1(), currentHead.hash(), author, message, Date.from(Instant.now()));
+            case UNSET -> new Commit(rootTree.miniGitSha1(), null, author, message, Date.from(Instant.now()));
             case BRANCH -> throw new IOException("Cannot commit on a branch. Not implemented yet.");
         };
     }
