@@ -1,5 +1,6 @@
-package cz.cuni.mff.jordanpa.minigit.commands;
+package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 
+import cz.cuni.mff.jordanpa.minigit.commands.Command;
 import cz.cuni.mff.jordanpa.minigit.structures.Commit;
 import cz.cuni.mff.jordanpa.minigit.structures.Head;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
@@ -9,7 +10,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Scanner;
 
-public final class LogCommand implements Command{
+public final class LogCommand implements Command {
     @Override
     public String name() {
         return "log";

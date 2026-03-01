@@ -1,5 +1,6 @@
-package cz.cuni.mff.jordanpa.minigit.commands;
+package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 
+import cz.cuni.mff.jordanpa.minigit.commands.Command;
 import cz.cuni.mff.jordanpa.minigit.structures.Commit;
 import cz.cuni.mff.jordanpa.minigit.structures.MiniGitObject;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
@@ -8,7 +9,7 @@ import cz.cuni.mff.jordanpa.minigit.structures.Tree;
 import java.io.IOException;
 import java.nio.file.Path;
 
-public final class CheckoutCommand implements Command{
+public final class CheckoutCommand implements Command {
     @Override
     public String name() {
         return "checkout";

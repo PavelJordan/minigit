@@ -1,5 +1,6 @@
-package cz.cuni.mff.jordanpa.minigit.commands;
+package cz.cuni.mff.jordanpa.minigit.commands.lowlevel;
 
+import cz.cuni.mff.jordanpa.minigit.commands.Command;
 import cz.cuni.mff.jordanpa.minigit.structures.Blob;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 

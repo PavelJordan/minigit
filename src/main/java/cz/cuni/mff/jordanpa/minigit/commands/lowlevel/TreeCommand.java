@@ -1,5 +1,6 @@
-package cz.cuni.mff.jordanpa.minigit.commands;
+package cz.cuni.mff.jordanpa.minigit.commands.lowlevel;
 
+import cz.cuni.mff.jordanpa.minigit.commands.Command;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 import cz.cuni.mff.jordanpa.minigit.structures.Tree;
 
@@ -8,7 +9,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-public final class TreeCommand implements Command{
+public final class TreeCommand implements Command {
     @Override
     public String name() {
         return "tree";

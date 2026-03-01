@@ -1,7 +1,7 @@
 package cz.cuni.mff.jordanpa.minigit;
 
 import cz.cuni.mff.jordanpa.minigit.commands.Command;
-import cz.cuni.mff.jordanpa.minigit.commands.HelpCommand;
+import cz.cuni.mff.jordanpa.minigit.commands.highlevel.HelpCommand;
 import cz.cuni.mff.jordanpa.minigit.commands.PluginLoader;
 
 import java.util.Arrays;

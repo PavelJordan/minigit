@@ -1,11 +1,12 @@
-package cz.cuni.mff.jordanpa.minigit.commands;
+package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 
+import cz.cuni.mff.jordanpa.minigit.commands.Command;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 
 import java.io.IOException;
 import java.nio.file.Path;
 
-public final class RestoreStagedCommand implements Command{
+public final class RestoreStagedCommand implements Command {
     @Override
     public String name() {
         return "restore-staged";

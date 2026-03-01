@@ -1,5 +1,6 @@
-package cz.cuni.mff.jordanpa.minigit.commands;
+package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 
+import cz.cuni.mff.jordanpa.minigit.commands.Command;
 import cz.cuni.mff.jordanpa.minigit.misc.Author;
 import cz.cuni.mff.jordanpa.minigit.structures.Commit;
 import cz.cuni.mff.jordanpa.minigit.structures.Head;
@@ -13,7 +14,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public final class CommitCommand implements Command{
+public final class CommitCommand implements Command {
     private static final String FIRST_BRANCH_NAME = "master";
     @Override
     public String name() {

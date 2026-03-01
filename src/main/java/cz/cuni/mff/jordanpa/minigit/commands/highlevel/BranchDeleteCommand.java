@@ -1,6 +1,8 @@
-package cz.cuni.mff.jordanpa.minigit.commands;
+package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 
-public final class BranchDeleteCommand implements Command{
+import cz.cuni.mff.jordanpa.minigit.commands.Command;
+
+public final class BranchDeleteCommand implements Command {
 
     @Override
     public String name() {

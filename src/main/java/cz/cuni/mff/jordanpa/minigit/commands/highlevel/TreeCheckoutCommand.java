@@ -1,5 +1,6 @@
-package cz.cuni.mff.jordanpa.minigit.commands;
+package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 
+import cz.cuni.mff.jordanpa.minigit.commands.Command;
 import cz.cuni.mff.jordanpa.minigit.structures.MiniGitObject;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 import cz.cuni.mff.jordanpa.minigit.structures.Tree;
@@ -7,7 +8,7 @@ import cz.cuni.mff.jordanpa.minigit.structures.Tree;
 import java.io.IOException;
 import java.nio.file.Path;
 
-public final class TreeCheckoutCommand implements Command{
+public final class TreeCheckoutCommand implements Command {
     @Override
     public String name() {
         return "tree-checkout";
