@@ -5,7 +5,7 @@ import java.util.Formatter;
 public interface Sha1Hashable {
 
     /**
-     * Returns the hash of this object.
+     * Returns the data of this object.
      * Should be calculated only once, for example, when the object is first created.
      */
     String miniGitSha1();

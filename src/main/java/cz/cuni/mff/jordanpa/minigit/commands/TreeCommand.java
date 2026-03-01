@@ -36,7 +36,7 @@ public final class TreeCommand implements Command{
             }
             trees.forEach(repo::storeInternally);
             repo.save();
-            IO.println("Tree successfully built. The root tree hash is: " + trees.getLast().miniGitSha1());
+            IO.println("Tree successfully built. The root tree data is: " + trees.getLast().miniGitSha1());
         } catch (IOException e) {
             IO.println(e);
             return 1;

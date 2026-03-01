@@ -53,7 +53,7 @@ public final class CommitCommand implements Command{
             repo.setCommitAsNewHeadAndStoreInternally(commit);
             trees.forEach(repo::storeInternally);
             repo.save();
-            IO.println("Successfully committed. Commit hash is: " + commit.miniGitSha1());
+            IO.println("Successfully committed. Commit data is: " + commit.miniGitSha1());
         } catch (IOException e) {
             IO.println(e);
         }
@@ -65,7 +65,7 @@ public final class CommitCommand implements Command{
         Head currentHead = repo.getHead();
 
         return switch (currentHead.type()) {
-            case COMMIT -> new Commit(rootTree.miniGitSha1(), currentHead.hash(), author, message, Date.from(Instant.now()));
+            case COMMIT -> new Commit(rootTree.miniGitSha1(), currentHead.data(), author, message, Date.from(Instant.now()));
             case UNSET -> new Commit(rootTree.miniGitSha1(), null, author, message, Date.from(Instant.now()));
             case BRANCH -> throw new IOException("Cannot commit on a branch. Not implemented yet.");
         };

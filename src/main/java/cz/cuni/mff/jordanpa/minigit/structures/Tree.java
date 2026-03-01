@@ -33,12 +33,12 @@ public final class Tree extends MiniGitObject implements TreeContent {
     public record TreeEntry(String hash, TreeEntryType type) {}
 
     /**
-     * Map name -> hash + type of tree content.
+     * Map name -> data + type of tree content.
      */
     private final SortedMap<String, TreeEntry> contents = new TreeMap<>();
 
     /**
-     * Map name -> hash + type of tree content.
+     * Map name -> data + type of tree content.
      */
     Tree(Map<String, TreeEntry> contents) {
         this.contents.putAll(contents);

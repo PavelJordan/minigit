@@ -39,13 +39,12 @@ public final class LogCommand implements Command{
                 IO.println("Not implemented yet.");
                 return 0;
             }
-            String currentCommit = currentHead.hash();
+            String currentCommit = currentHead.data();
             Map<String, String> refs = repo.getReferences();
-            String headHash = currentCommit;
             while (currentCommit != null) {
                 Commit commit = (Commit) repo.loadFromInternal(currentCommit);
                 assert commit != null;
-                IO.println(commit.getAnnotatedDescription(refs, headHash));
+                IO.println(commit.getAnnotatedDescription(refs, currentHead));
                 String[] parents = commit.getParents();
                 if (parents.length == 1) {
                     currentCommit = parents[0];

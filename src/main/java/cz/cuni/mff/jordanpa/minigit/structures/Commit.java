@@ -33,8 +33,8 @@ public final class Commit extends MiniGitObject {
 
     /**
      * Creates a new commit.
-     * @param snapshot the hash of the tree object this commit refers to.
-     * @param parent the hash of the parent commit
+     * @param snapshot the data of the tree object this commit refers to.
+     * @param parent the data of the parent commit
      * @param author the author of this commit
      * @param message the commit message
      */
@@ -86,25 +86,31 @@ public final class Commit extends MiniGitObject {
         return getAnnotatedDescription(Collections.emptyMap(), null);
     }
 
-    public String getAnnotatedDescription(Map<String, String> nameToHashReferences, String headHash) {
+    public String getAnnotatedDescription(Map<String, String> nameToHashReferences, Head head) {
         // implement references
         String hashStr = "Commit Hash: " + miniGitSha1();
-        String hashStrEnd;
-        if (headHash != null && headHash.equals(miniGitSha1())) {
-            hashStrEnd = " (HEAD)\n";
+        StringBuilder hashStrEnd = new StringBuilder();
+        if (head != null && head.type() == Head.Type.COMMIT && head.data().equals(miniGitSha1())) {
+            hashStrEnd.append(" (HEAD)");
         }
-        else {
-            hashStrEnd = "\n";
+        for (Map.Entry<String, String> entry : nameToHashReferences.entrySet()) {
+            if (entry.getValue().equals(miniGitSha1())) {
+                hashStrEnd.append(" (").append(entry.getKey());
+                if (head != null && head.type() == Head.Type.BRANCH && head.data().equals(entry.getKey())) {
+                    hashStrEnd.append(" <- HEAD");
+                }
+                hashStrEnd.append(")");
+            }
         }
-        String treeHashStr = "Tree hash : " + Snapshot + "\n";
+        String treeHashStr = "Tree data : " + Snapshot + "\n";
         String authorStr = "Author: " + author.name() + ", " + author.email() + "\n";
         String dateStr = "Date: " + date.toString() + "\n";
         String messageStr = "Message: \n[\n" + message + "\n]\n";
-        return hashStr + hashStrEnd + treeHashStr + authorStr + dateStr + messageStr;
+        return hashStr + hashStrEnd.append("\n") + treeHashStr + authorStr + dateStr + messageStr;
     }
 
     /**
-     * Returns the hash of this object.
+     * Returns the data of this object.
      * Should be calculated only once, for example, when the object is first created.
      */
     @Override

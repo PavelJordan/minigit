@@ -21,13 +21,13 @@ public final class CheckoutCommand implements Command{
 
     @Override
     public String help() {
-        return "Checkout a branch, tag or commit hash. Update head to point to it.";
+        return "Checkout a branch, tag or commit data. Update head to point to it.";
     }
 
     @Override
     public int execute(String[] args) {
         if (args.length != 1) {
-            IO.println("Incorrect number of arguments. Provide exactly 1 branch, tag or commit hash.");
+            IO.println("Incorrect number of arguments. Provide exactly 1 branch, tag or commit data.");
             return 1;
         }
         try {
@@ -43,7 +43,7 @@ public final class CheckoutCommand implements Command{
                 }
             }
             else {
-                IO.println("Object with specified hash or name is not a commit.");
+                IO.println("Object with specified data or name is not a commit.");
                 return 1;
             }
         } catch (IOException e) {

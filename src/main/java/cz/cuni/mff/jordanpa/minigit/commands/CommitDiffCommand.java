@@ -27,14 +27,14 @@ public final class CommitDiffCommand implements Command {
     @Override
     public int execute(String[] args) {
         if (args.length != 1) {
-            IO.println("Incorrect number of arguments. Provide exactly 1 hash or name (branch/tag) of commit.");
+            IO.println("Incorrect number of arguments. Provide exactly 1 data or name (branch/tag) of commit.");
             return 1;
         }
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
             MiniGitObject maybeCommit = repo.loadFromInternal(args[0]);
             if (!(maybeCommit instanceof Commit commit)) {
-                IO.println("Object with specified hash is not a commit.");
+                IO.println("Object with specified data is not a commit.");
                 return 1;
             }
             Tree commitTree = (Tree) repo.loadFromInternal(commit.getTreeHash());

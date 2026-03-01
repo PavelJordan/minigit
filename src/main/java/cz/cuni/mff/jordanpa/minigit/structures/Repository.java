@@ -19,12 +19,12 @@ public final class Repository {
     public record FileStatus(Path path, FileStatusType status) {}
 
     /**
-     * Map hash -> actual object. Only the objects that are currently in runtime memory.
+     * Map data -> actual object. Only the objects that are currently in runtime memory.
      */
     private final HashMap<String, MiniGitObject> objects = new HashMap<>();
 
     /**
-     * Map human-readable name -> hash. Only the references that are currently in runtime memory.
+     * Map human-readable name -> data. Only the references that are currently in runtime memory.
      */
     private final HashMap<String, String> references = new HashMap<>();
     private final Path repoPath;
@@ -32,6 +32,7 @@ public final class Repository {
     private final Path indexPath;
     private final Path headPath;
     private final Path authorPath; // Not in remote!
+    private final Path refPath;
     private Head head;
 
     public Head getHead() throws IOException {
@@ -40,7 +41,7 @@ public final class Repository {
     }
 
     /**
-     * Map path -> hash.
+     * Map path -> data.
      */
     private HashMap<Path, String> stagedIndex;
 
@@ -50,9 +51,11 @@ public final class Repository {
         this.indexPath = path.resolve("index");
         this.headPath = path.resolve("HEAD");
         this.authorPath = path.resolve("author");
+        this.refPath = path.resolve("refs");
     }
 
-    public Map<String, String> getReferences() {
+    public Map<String, String> getReferences() throws IOException {
+        ensureRefLoaded();
         return Map.copyOf(references);
     }
 
@@ -81,7 +84,7 @@ public final class Repository {
             }
             catch(IOException e) {
                 IO.println(e);
-                IO.println("Error loading object from repository. Check your permissions and hash and try again.");
+                IO.println("Error loading object from repository. Check your permissions and data and try again.");
                 return null;
             }
         }
@@ -97,6 +100,7 @@ public final class Repository {
         }
         saveIndex();
         saveHead();
+        saveRef();
     }
 
     public void addToIndex(Path... files) throws IOException {
@@ -119,7 +123,7 @@ public final class Repository {
     }
 
     /**
-     * Loads the index from the disk (path -> blob hash).
+     * Loads the index from the disk (path -> blob data).
      */
     private void ensureIndexLoaded() throws IOException {
         if (stagedIndex != null) {
@@ -138,7 +142,7 @@ public final class Repository {
     }
 
     /**
-     * Saves the index to the disk (path -> blob hash).
+     * Saves the index to the disk (path -> blob data).
      */
     private void saveIndex() throws IOException {
         if (!Files.exists(indexPath)) {
@@ -171,6 +175,34 @@ public final class Repository {
             head = Head.loadHead(headPath);
         }
     }
+
+    private void saveRef() throws IOException {
+        if (!Files.exists(refPath)) {
+            Files.createDirectories(refPath.getParent());
+            Files.createFile(refPath);
+        }
+        try (var out = Files.newBufferedWriter(refPath)) {
+            for (Map.Entry<String, String> entry : references.entrySet()) {
+                out.write(entry.getValue() + " " + entry.getKey() + "\n");
+            }
+        }
+    }
+
+    private void ensureRefLoaded() throws IOException {
+        if (!references.isEmpty() || !Files.exists(refPath)) {
+            return;
+        }
+        try (var in = Files.newBufferedReader(refPath)) {
+            String line;
+            while ((line = in.readLine()) != null) {
+                int delimiterIndex = line.indexOf(' ');
+                String hash = line.substring(0, delimiterIndex);
+                String name = line.substring(delimiterIndex + 1);
+                references.put(name, hash);
+            }
+        }
+    }
+
 
     public Map<Path, String> getTrackedFiles() throws IOException {
         ensureIndexLoaded();
@@ -217,7 +249,7 @@ public final class Repository {
                 }
             }
             else {
-                IO.println("Object with specified hash is not a blob, even though it should. Repository is corrupted.");
+                IO.println("Object with specified data is not a blob, even though it should. Repository is corrupted.");
             }
         }
     }
@@ -231,7 +263,7 @@ public final class Repository {
 
     private HashMap<Path, String> getCommitIndexFromHead() throws IOException {
         if (head.type() == Head.Type.COMMIT) {
-            MiniGitObject maybeCommit = loadFromInternal(head.hash());
+            MiniGitObject maybeCommit = loadFromInternal(head.data());
             if (maybeCommit instanceof Commit commit) {
                 MiniGitObject maybeTree = loadFromInternal(commit.getTreeHash());
                 if (maybeTree instanceof Tree tree) {
@@ -322,7 +354,7 @@ public final class Repository {
                     treeIndex.putAll(getIndexOfTreeInternal(subtreeToRestore, pathSoFar.resolve(name)));
                 }
                 else {
-                    IO.println("Object with specified hash is not a tree, even though it should. Repository is corrupted.");
+                    IO.println("Object with specified data is not a tree, even though it should. Repository is corrupted.");
                 }
             }
             else if (entry.type() == Tree.TreeEntryType.BLOB) {
@@ -383,5 +415,10 @@ public final class Repository {
         getIndexOfTree(commitTree).forEach((path, hash) -> {
             IO.println(path + " (" + hash + ")");
         });
+    }
+
+    public void setRef(String arg, String hash) throws IOException {
+        ensureRefLoaded();
+        references.put(arg, hash);
     }
 }

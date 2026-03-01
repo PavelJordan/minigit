@@ -20,13 +20,13 @@ public final class TreeCheckoutCommand implements Command{
 
     @Override
     public String help() {
-        return "Checkout a tree object from the repository database. Provide one hash. HEAD stays - you can rollback this way by commiting later.";
+        return "Checkout a tree object from the repository database. Provide one data. HEAD stays - you can rollback this way by commiting later.";
     }
 
     @Override
     public int execute(String[] args) {
         if (args.length != 1) {
-            IO.println("Incorrect number of arguments. Provide exactly 1 hash.");
+            IO.println("Incorrect number of arguments. Provide exactly 1 data.");
             return 1;
         }
         String treeHash = args[0];
@@ -37,7 +37,7 @@ public final class TreeCheckoutCommand implements Command{
                 repo.checkoutTree(tree);
             }
             else {
-                IO.println("Object with specified hash is not a tree.");
+                IO.println("Object with specified data is not a tree.");
                 return 1;
             }
             repo.save();

@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public record Head(Type type, String hash) {
+public record Head(Type type, String data) {
     public enum Type {
         BRANCH,
         COMMIT,
@@ -28,8 +28,8 @@ public record Head(Type type, String hash) {
     public void write(Path path) throws IOException {
         try(var out = Files.newBufferedWriter(path)) {
             out.write(type.name() + "\n");
-            if (hash != null) {
-                out.write(hash);
+            if (data != null) {
+                out.write(data);
             }
         }
     }

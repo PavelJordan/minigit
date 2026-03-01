@@ -61,7 +61,7 @@ public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob,
         if (Files.exists(path)) {
             return;
         }
-        IO.println("Object written with hash [" + miniGitSha1() + "]");
+        IO.println("Object written with data [" + miniGitSha1() + "]");
         Files.createDirectories(path.getParent());
         try(var out = new BufferedOutputStream(Files.newOutputStream(path))) {
             out.write(bytes);
