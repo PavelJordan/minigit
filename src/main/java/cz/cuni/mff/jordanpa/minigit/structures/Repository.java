@@ -16,6 +16,9 @@ public final class Repository {
         NEW
     }
 
+    private static final String REF_TYPE_BRANCH = "BRANCH";
+    private static final String REF_TYPE_TAG = "TAG";
+
     public record FileStatus(Path path, FileStatusType status) {}
 
     /**
@@ -24,9 +27,11 @@ public final class Repository {
     private final HashMap<String, MiniGitObject> objects = new HashMap<>();
 
     /**
-     * Map human-readable name -> data. Only the references that are currently in runtime memory.
+     * Map human-readable name -> data for branches and tags. Only the references that are currently in runtime memory.
      */
-    private final HashMap<String, String> references = new HashMap<>();
+    private final HashMap<String, String> branches = new HashMap<>();
+    private final HashMap<String, String> tags = new HashMap<>();
+
     private final Path repoPath;
     private final Path objectsPath;
     private final Path indexPath;
@@ -53,8 +58,19 @@ public final class Repository {
         this.refPath = path.resolve("refs");
     }
 
-    public Map<String, String> getReferences() {
-        return Map.copyOf(references);
+    public Map<String, String> getBranches() {
+        return Map.copyOf(branches);
+    }
+
+    public Map<String, String> getTags() {
+        return Map.copyOf(tags);
+    }
+
+    public Map<String, String> getAllRefs() {
+        HashMap<String, String> refs = new HashMap<>();
+        refs.putAll(Map.copyOf(branches));
+        refs.putAll(Map.copyOf(tags));
+        return refs;
     }
 
     public static Repository load(Path loadFrom) throws IOException {
@@ -76,7 +92,15 @@ public final class Repository {
     }
 
     public MiniGitObject loadFromInternal(String hashOrName) throws IOException {
-        String hash = references.getOrDefault(hashOrName, hashOrName);
+        String hash;
+
+        if (branches.containsKey(hashOrName)) {
+            hash = branches.get(hashOrName);
+        }
+        else {
+            hash = tags.getOrDefault(hashOrName, hashOrName);
+        }
+
         if (!objects.containsKey(hash)) {
             try {
                 MiniGitObject obj = MiniGitObject.getObjectBasedOnHash(objectsPath, hash);
@@ -116,7 +140,7 @@ public final class Repository {
             }
             catch(IOException e) {
                 IO.println(e);
-                IO.println("Error adding file " + file.toString() + " to index. Continuing...");
+                IO.println("Error adding file " + file + " to index. Continuing...");
             }
         }
     }
@@ -176,8 +200,11 @@ public final class Repository {
             Files.createFile(refPath);
         }
         try (var out = Files.newBufferedWriter(refPath)) {
-            for (Map.Entry<String, String> entry : references.entrySet()) {
-                out.write(entry.getValue() + " " + entry.getKey() + "\n");
+            for (Map.Entry<String, String> entry : branches.entrySet()) {
+                out.write(REF_TYPE_BRANCH + " " + entry.getValue() + " " + entry.getKey() + "\n");
+            }
+            for (Map.Entry<String, String> entry : tags.entrySet()) {
+                out.write(REF_TYPE_TAG + " " + entry.getValue() + " " + entry.getKey() + "\n");
             }
         }
     }
@@ -190,9 +217,20 @@ public final class Repository {
             String line;
             while ((line = in.readLine()) != null) {
                 int delimiterIndex = line.indexOf(' ');
-                String hash = line.substring(0, delimiterIndex);
-                String name = line.substring(delimiterIndex + 1);
-                references.put(name, hash);
+                String nameOrTag = line.substring(0, delimiterIndex);
+                String rest = line.substring(delimiterIndex + 1);
+                int typeIndex = rest.indexOf(' ');
+                String hash = rest.substring(0, typeIndex);
+                String name = rest.substring(typeIndex + 1);
+                if (nameOrTag.equals(REF_TYPE_TAG)) {
+                    tags.put(name, hash);
+                }
+                else if (nameOrTag.equals(REF_TYPE_BRANCH)) {
+                    branches.put(name, hash);
+                }
+                else {
+                    throw new IOException("Invalid reference type: " + nameOrTag);
+                }
             }
         }
     }
@@ -259,13 +297,12 @@ public final class Repository {
     private HashMap<Path, String> getCommitIndexFromHead() throws IOException {
         String hash;
         if (head.type() == Head.Type.BRANCH) {
-             hash = references.get(head.data());
+             hash = branches.get(head.data());
         }
         else if (head.type() == Head.Type.COMMIT) {
              hash = head.data();
         }
         else {
-            IO.println("No commit yet");
             return new HashMap<>();
         }
         MiniGitObject maybeCommit = loadFromInternal(hash);
@@ -336,7 +373,7 @@ public final class Repository {
         head = new Head(Head.Type.COMMIT, commit.miniGitSha1());
     }
 
-    public void setHeadToRef(String checkoutTo) {
+    public void setHeadToBranch(String checkoutTo) {
         head = new Head(Head.Type.BRANCH, checkoutTo);
     }
 
@@ -364,8 +401,8 @@ public final class Repository {
         return treeIndex;
     }
 
-    public boolean isNameInReferences(String name) {
-        return references.containsKey(name);
+    public boolean isBranch(String name) {
+        return branches.containsKey(name);
     }
 
     public HashMap<Path, String> getIndexOfWorkingDirectory() throws IOException {
@@ -418,7 +455,7 @@ public final class Repository {
         });
     }
 
-    public void setRef(String arg, String hash){
-        references.put(arg, hash);
+    public void setBranch(String arg, String hash){
+        branches.put(arg, hash);
     }
 }

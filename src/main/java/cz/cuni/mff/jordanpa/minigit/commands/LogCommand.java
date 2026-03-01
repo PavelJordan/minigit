@@ -36,11 +36,11 @@ public final class LogCommand implements Command{
                 return 0;
             }
             String currentCommitHash = switch (currentHead.type()) {
-                case BRANCH -> repo.getReferences().get(currentHead.data());
+                case BRANCH -> repo.getBranches().get(currentHead.data());
                 case COMMIT -> currentHead.data();
                 case null, default -> throw new RuntimeException("Head type is not supported.");
             };
-            Map<String, String> refs = repo.getReferences();
+            Map<String, String> refs = repo.getAllRefs();
             while (currentCommitHash != null) {
                 Commit commit = (Commit) repo.loadFromInternal(currentCommitHash);
                 assert commit != null;

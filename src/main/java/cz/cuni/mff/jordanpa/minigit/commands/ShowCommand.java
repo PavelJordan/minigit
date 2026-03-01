@@ -8,10 +8,10 @@ import cz.cuni.mff.jordanpa.minigit.structures.Tree;
 import java.io.IOException;
 import java.nio.file.Path;
 
-public final class CommitDiffCommand implements Command {
+public final class ShowCommand implements Command {
     @Override
     public String name() {
-        return "commit-diff";
+        return "show";
     }
 
     @Override

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 public final class CommitCommand implements Command{
+    private static final String FIRST_BRANCH_NAME = "master";
     @Override
     public String name() {
         return "commit";
@@ -53,10 +54,17 @@ public final class CommitCommand implements Command{
             repo.storeInternally(commit);
             trees.forEach(repo::storeInternally);
             if (repo.getHead().type() == Head.Type.BRANCH) {
-                repo.setRef(repo.getHead().data(), commit.miniGitSha1());
-                repo.setHeadToRef(repo.getHead().data());
+                IO.println("Committing to branch " + repo.getHead().data());
+                repo.setBranch(repo.getHead().data(), commit.miniGitSha1());
+                repo.setHeadToBranch(repo.getHead().data());
+            }
+            else if (repo.getHead().type() == Head.Type.UNSET) {
+                IO.println("No HEAD yet. Creating master branch.");
+                repo.setBranch(FIRST_BRANCH_NAME, commit.miniGitSha1());
+                repo.setHeadToBranch(FIRST_BRANCH_NAME);
             }
             else {
+                IO.println("Committing to detached state");
                 repo.setHeadToCommit(commit);
             }
             repo.save();
@@ -74,7 +82,7 @@ public final class CommitCommand implements Command{
         return switch (currentHead.type()) {
             case COMMIT -> new Commit(rootTree.miniGitSha1(), currentHead.data(), author, message, Date.from(Instant.now()));
             case UNSET -> new Commit(rootTree.miniGitSha1(), null, author, message, Date.from(Instant.now()));
-            case BRANCH -> new Commit(rootTree.miniGitSha1(), repo.getReferences().get(currentHead.data()), author, message, Date.from(Instant.now()));
+            case BRANCH -> new Commit(rootTree.miniGitSha1(), repo.getBranches().get(currentHead.data()), author, message, Date.from(Instant.now()));
         };
     }
 }

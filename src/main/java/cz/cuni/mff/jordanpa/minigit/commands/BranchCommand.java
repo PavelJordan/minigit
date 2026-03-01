@@ -33,7 +33,7 @@ public final class BranchCommand implements Command{
             Repository repo = Repository.load(Path.of(".minigit"));
             Head head = repo.getHead();
             if (head.type() == Head.Type.COMMIT) {
-                repo.setRef(branchName, head.data());
+                repo.setBranch(branchName, head.data());
             }
             else if (head.type() == Head.Type.BRANCH) {
                 throw new UnsupportedOperationException("Not implemented yet.");

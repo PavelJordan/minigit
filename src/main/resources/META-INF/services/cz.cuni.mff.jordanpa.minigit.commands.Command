@@ -12,6 +12,6 @@ cz.cuni.mff.jordanpa.minigit.commands.LogCommand
 cz.cuni.mff.jordanpa.minigit.commands.RestoreStagedCommand
 cz.cuni.mff.jordanpa.minigit.commands.CheckoutCommand
 cz.cuni.mff.jordanpa.minigit.commands.AuthorCommand
-cz.cuni.mff.jordanpa.minigit.commands.CommitDiffCommand
+cz.cuni.mff.jordanpa.minigit.commands.ShowCommand
 cz.cuni.mff.jordanpa.minigit.commands.BranchCommand
-cz.cuni.mff.jordanpa.minigit.commands.BranchDeleteCommand
+cz.cuni.mff.jordanpa.minigit.commands.RefsCommand

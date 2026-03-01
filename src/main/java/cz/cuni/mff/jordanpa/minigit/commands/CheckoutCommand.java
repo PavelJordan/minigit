@@ -38,9 +38,9 @@ public final class CheckoutCommand implements Command{
                 MiniGitObject maybeTree = repo.loadFromInternal(commit.getTreeHash());
                 if (maybeTree instanceof Tree tree) {
                     repo.checkoutTree(tree);
-                    if (repo.isNameInReferences(checkoutTo)) {
-                        repo.setRef(checkoutTo, commit.miniGitSha1());
-                        repo.setHeadToRef(checkoutTo);
+                    if (repo.isBranch(checkoutTo)) {
+                        repo.setBranch(checkoutTo, commit.miniGitSha1());
+                        repo.setHeadToBranch(checkoutTo);
                         IO.println("Currently at branch " + checkoutTo);
                     }
                     else {
