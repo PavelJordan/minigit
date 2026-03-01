@@ -1,10 +1,13 @@
 package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 
 import cz.cuni.mff.jordanpa.minigit.commands.Command;
+import cz.cuni.mff.jordanpa.minigit.misc.FileHelper;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class AddCommand implements Command {
     @Override
@@ -30,9 +33,13 @@ public final class AddCommand implements Command {
         }
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
+            List<Path> files = new ArrayList<>();
             for (String arg : args) {
-                IO.println("Adding changes of " + arg + "...");
-                repo.addToIndex(Path.of(arg));
+                files.addAll(FileHelper.getFilesFromWildcard(arg));
+            }
+            for (Path file : files) {
+                IO.println("Adding changes of " + file + "...");
+                repo.addToIndex(file);
             }
             repo.save();
             IO.println("Done.");
