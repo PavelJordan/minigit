@@ -8,3 +8,4 @@ cz.cuni.mff.jordanpa.minigit.commands.RestoreCommand
 cz.cuni.mff.jordanpa.minigit.commands.TreeCommand
 cz.cuni.mff.jordanpa.minigit.commands.TreeCheckoutCommand
 cz.cuni.mff.jordanpa.minigit.commands.CommitCommand
+cz.cuni.mff.jordanpa.minigit.commands.LogCommand

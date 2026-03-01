@@ -48,6 +48,10 @@ public final class Repository {
         this.headPath = path.resolve("HEAD");
     }
 
+    public Map<String, String> getReferences() {
+        return Map.copyOf(references);
+    }
+
     public static Repository load(Path loadFrom) throws IOException {
         if (!Files.exists(loadFrom)) {
             throw new IOException("Repository does not exist.");
@@ -213,6 +217,7 @@ public final class Repository {
 
     public List<FileStatus> getStagedToLastCommitStatus() throws IOException {
         ensureHeadLoaded();
+        ensureIndexLoaded();
         HashMap<Path, String> commitIndex = getCommitIndexFromHead();
         return getFileStatusesFromComparison(stagedIndex, commitIndex);
     }

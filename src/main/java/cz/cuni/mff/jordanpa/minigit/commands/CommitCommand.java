@@ -8,6 +8,8 @@ import cz.cuni.mff.jordanpa.minigit.structures.Tree;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +37,11 @@ public final class CommitCommand implements Command{
         }
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
+            List<Repository.FileStatus> stagedToLastCommitStatus = repo.getStagedToLastCommitStatus();
+            if (stagedToLastCommitStatus.stream().allMatch(status -> status.status() == Repository.FileStatusType.TRACKED)) {
+                IO.println("There is nothing to commit.");
+                return 0;
+            }
             Map<Path, String> trackedFiles = repo.getTrackedFiles();
             List<Tree> trees = Tree.buildTree(trackedFiles);
             Commit commit = getCommit(trees, repo, args[0]);
@@ -53,8 +60,8 @@ public final class CommitCommand implements Command{
         Head currentHead = repo.getHead();
 
         return switch (currentHead.type()) {
-            case COMMIT -> new Commit(rootTree.miniGitSha1(), currentHead.hash(), Author.getDefaultAuthor(), message);
-            case UNSET -> new Commit(rootTree.miniGitSha1(), null, Author.getDefaultAuthor(), message);
+            case COMMIT -> new Commit(rootTree.miniGitSha1(), currentHead.hash(), Author.getDefaultAuthor(), message, Date.from(Instant.now()));
+            case UNSET -> new Commit(rootTree.miniGitSha1(), null, Author.getDefaultAuthor(), message, Date.from(Instant.now()));
             case BRANCH -> throw new IOException("Cannot commit on a branch. Not implemented yet.");
         };
     }

@@ -6,9 +6,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.time.Instant;
+import java.util.*;
 
 /**
  * Represents a frozen state of a repository the user can refer to.
@@ -27,6 +28,7 @@ public final class Commit extends MiniGitObject {
     private final String[] parents;
     private final String message;
     private final Author author;
+    private final Date date;
     private String sha1;
     public final String AUTHOR_HEADER = "AUTHOR";
 
@@ -37,11 +39,16 @@ public final class Commit extends MiniGitObject {
      * @param author the author of this commit
      * @param message the commit message
      */
-    public Commit(String snapshot, String parent, Author author, String message) {
+    public Commit(String snapshot, String parent, Author author, String message, Date date) {
         this.Snapshot = snapshot;
         this.parents = parent == null ? new String[0] : new String[]{parent};
         this.message = message;
         this.author = author;
+        this.date = date;
+    }
+
+    public String [] getParents() {
+        return Arrays.copyOf(parents, parents.length);
     }
 
     Commit(byte[] byteArray) {
@@ -57,12 +64,16 @@ public final class Commit extends MiniGitObject {
             String authorName = scanner.nextLine();
             String authorEmail =  scanner.nextLine();
             this.author = new Author(authorName, authorEmail);
+            String dateStr = scanner.nextLine();
+            this.date = DATE_FORMAT.parse(dateStr);
             StringBuilder sb = new StringBuilder();
             if (scanner.hasNextLine()) {
                 sb.append(scanner.nextLine());
                 scanner.forEachRemaining(s -> sb.append("\n").append(s));
             }
             this.message = sb.toString();
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -73,11 +84,24 @@ public final class Commit extends MiniGitObject {
 
     @Override
     public String getDescription() {
-        String hashStr = "Tree hash : [" + Snapshot + "]\n";
+        return getAnnotatedDescription(Collections.emptyMap(), null);
+    }
+
+    public String getAnnotatedDescription(Map<String, String> nameToHashReferences, String headHash) {
+        // implement references
+        String hashStr = "Commit Hash: " + miniGitSha1();
+        String hashStrEnd;
+        if (headHash != null && headHash.equals(miniGitSha1())) {
+            hashStrEnd = " (HEAD)\n";
+        }
+        else {
+            hashStrEnd = "\n";
+        }
+        String treeHashStr = "Tree hash : " + Snapshot + "\n";
         String authorStr = "Author: " + author.name() + ", " + author.email() + "\n";
-        String parentsStr = "Parents: " + String.join(", ", parents) + "\n";
+        String dateStr = "Date: " + date.toString() + "\n";
         String messageStr = "Message: \n[\n" + message + "\n]\n";
-        return hashStr + authorStr + parentsStr + messageStr;
+        return hashStr + hashStrEnd + treeHashStr + authorStr + dateStr + messageStr;
     }
 
     /**
@@ -105,12 +129,16 @@ public final class Commit extends MiniGitObject {
             out.write('\n');
             out.write(author.email().getBytes());
             out.write('\n');
+            out.write(DATE_FORMAT.format(date).getBytes());
+            out.write('\n');
             out.write(message.getBytes());
             return out.toByteArray();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
+
+    private static final DateFormat DATE_FORMAT = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
 
     public String getTreeHash() {
         return Snapshot;
