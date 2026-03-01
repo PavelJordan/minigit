@@ -31,7 +31,7 @@ public final class Repository {
      */
     private final HashMap<String, String> branches = new HashMap<>();
     private final HashMap<String, String> tags = new HashMap<>();
-
+    private Author currentAuthor = null;
     private final Path repoPath;
     private final Path objectsPath;
     private final Path indexPath;
@@ -66,13 +66,6 @@ public final class Repository {
         return Map.copyOf(tags);
     }
 
-    public Map<String, String> getAllRefs() {
-        HashMap<String, String> refs = new HashMap<>();
-        refs.putAll(Map.copyOf(branches));
-        refs.putAll(Map.copyOf(tags));
-        return refs;
-    }
-
     public static Repository load(Path loadFrom) throws IOException {
         if (!Files.exists(loadFrom)) {
             throw new IOException("Repository does not exist.");
@@ -81,6 +74,7 @@ public final class Repository {
         repo.loadHead();
         repo.loadRef();
         repo.loadIndex();
+        repo.loadCurrentAuthor();
         return repo;
     }
 
@@ -125,6 +119,7 @@ public final class Repository {
         saveIndex();
         saveHead();
         saveRef();
+        saveCurrentAuthor();
     }
 
     public void addToIndex(Path... files) {
@@ -419,22 +414,33 @@ public final class Repository {
         stagedIndex = getCommitIndexFromHead();
     }
 
-    public Author loadCurrentAuthor() throws IOException {
+    private void loadCurrentAuthor() throws IOException {
         if (!Files.exists(authorPath)) {
-            return null;
+            return;
         }
         try(var in = Files.newBufferedReader(authorPath)) {
             String name = in.readLine();
             String email = in.readLine();
-            return new Author(name, email);
+            currentAuthor = new Author(name, email);
+        }
+    }
+
+    private void saveCurrentAuthor() throws IOException {
+        if (currentAuthor == null) {
+            return;
+        }
+        try(var out = Files.newBufferedWriter(authorPath)) {
+            out.write(currentAuthor.name() + "\n");
+            out.write(currentAuthor.email() + "\n");
         }
     }
 
     public void setCurrentAuthor(Author author) throws IOException {
-        try(var out = Files.newBufferedWriter(authorPath)) {
-            out.write(author.name() + "\n");
-            out.write(author.email() + "\n");
-        }
+        currentAuthor = author;
+    }
+
+    public Author getCurrentAuthor() {
+        return currentAuthor;
     }
 
     public void showTreeDiff(Tree baseTree, Tree treeToCompare) throws IOException{
@@ -457,5 +463,9 @@ public final class Repository {
 
     public void setBranch(String arg, String hash){
         branches.put(arg, hash);
+    }
+
+    public void setTag(String arg, String data) {
+        tags.put(arg, data);
     }
 }

@@ -39,7 +39,7 @@ public final class CommitCommand implements Command {
         }
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
-            Author author = repo.loadCurrentAuthor();
+            Author author = repo.getCurrentAuthor();
             if (author == null) {
                 IO.println("No author set. Use 'minigit author <name> <email>' to set one.");
                 return 1;

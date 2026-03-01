@@ -15,3 +15,4 @@ cz.cuni.mff.jordanpa.minigit.commands.highlevel.AuthorCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.ShowCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.BranchCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.RefsCommand
+cz.cuni.mff.jordanpa.minigit.commands.highlevel.TagCommand

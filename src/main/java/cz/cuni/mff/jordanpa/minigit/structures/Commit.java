@@ -83,23 +83,27 @@ public final class Commit extends MiniGitObject {
 
     @Override
     public String getDescription() {
-        return getAnnotatedDescription(Collections.emptyMap(), null);
+        return getAnnotatedDescription(Collections.emptyMap(), Collections.emptyMap(), null);
     }
 
-    public String getAnnotatedDescription(Map<String, String> nameToHashReferences, Head head) {
-        // implement references
+    public String getAnnotatedDescription(Map<String, String> branchNameToHash, Map<String, String> tagNameToHash, Head head) {
         String hashStr = "Commit Hash: " + miniGitSha1();
         StringBuilder hashStrEnd = new StringBuilder();
         if (head != null && head.type() == Head.Type.COMMIT && head.data().equals(miniGitSha1())) {
             hashStrEnd.append(" (DETACHED HEAD)");
         }
-        for (Map.Entry<String, String> entry : nameToHashReferences.entrySet()) {
+        for (Map.Entry<String, String> entry : branchNameToHash.entrySet()) {
             if (entry.getValue().equals(miniGitSha1())) {
-                hashStrEnd.append(" (").append(entry.getKey());
+                hashStrEnd.append(" (branch [").append(entry.getKey()).append("]");
                 if (head != null && head.type() == Head.Type.BRANCH && head.data().equals(entry.getKey())) {
                     hashStrEnd.append(" <- HEAD");
                 }
                 hashStrEnd.append(")");
+            }
+        }
+        for (Map.Entry<String, String> entry : tagNameToHash.entrySet()) {
+            if (entry.getValue().equals(miniGitSha1())) {
+                hashStrEnd.append(" (tag [").append(entry.getKey()).append("])");
             }
         }
         String treeHashStr = "Tree data : " + Snapshot + "\n";
