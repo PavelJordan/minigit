@@ -31,17 +31,12 @@ public final class TagCommand implements Command {
         }
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
-            Head head = repo.getHead();
-            if (head.type() == Head.Type.UNSET) {
+            String hashToTag = repo.getHeadCommitHash();
+            if (hashToTag == null) {
                 IO.println("No commits yet.");
                 return 1;
             }
-            if (head.type() == Head.Type.COMMIT) {
-                repo.setTag(args[0], head.data());
-            }
-            else if (head.type() == Head.Type.BRANCH) {
-                repo.setTag(args[0], repo.getBranches().get(head.data()));
-            }
+            repo.setTag(args[0], hashToTag);
             IO.println("Tag " + args[0] + " created.");
             repo.save();
         } catch (IOException e) {

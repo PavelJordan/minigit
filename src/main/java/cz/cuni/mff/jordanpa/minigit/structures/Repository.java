@@ -197,6 +197,18 @@ public final class Repository {
         head = Head.loadHead(headPath);
     }
 
+    public String getHeadCommitHash() {
+        if (head.type() == Head.Type.BRANCH) {
+            return branches.get(head.data());
+        }
+        else if (head.type() == Head.Type.COMMIT) {
+            return head.data();
+        }
+        else {
+            return null;
+        }
+    }
+
     private void saveRef() throws IOException {
         if (!Files.exists(refPath)) {
             Files.createDirectories(refPath.getParent());
