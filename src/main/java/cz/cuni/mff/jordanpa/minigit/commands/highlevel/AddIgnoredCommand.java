@@ -8,10 +8,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
-public final class AddCommand implements Command {
+public final class AddIgnoredCommand implements Command {
     @Override
     public String name() {
-        return "add";
+        return "add-ignored";
     }
 
     @Override
@@ -21,7 +21,7 @@ public final class AddCommand implements Command {
 
     @Override
     public String help() {
-        return "Add/update files into the staging area (index). You can provide list of files to add as arguments.";
+        return "Stages specified ignored files for deletion. Works well if you want to delete newly ignored files.";
     }
 
     @Override
@@ -32,11 +32,13 @@ public final class AddCommand implements Command {
         }
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
-            List<String> toIgnore = repo.getIgnored();
+            List<String> ignored = repo.getIgnored();
             for (String pattern : args) {
-                for (Path file: FileHelper.getAllFiles(Path.of(pattern), toIgnore)) {
-                    IO.println("Adding changes of " + file + "...");
-                    repo.addToIndex(file);
+                for (Path file: FileHelper.getAllFiles(Path.of(pattern), List.of())) {
+                    if (FileHelper.isExcluded(file, ignored)) {
+                        IO.println("Staging ignored file " + file + " for deletion...");
+                        repo.addToIndex(file);
+                    }
                 }
             }
             repo.save();

@@ -21,7 +21,7 @@ public final class TreeCheckoutCommand implements Command {
 
     @Override
     public String help() {
-        return "Checkout a tree object from the repository database. Provide one data. HEAD stays - you can rollback this way by commiting later.";
+        return "Checkout a tree object. Provide one hash. HEAD stays - you can rollback commits this way by unstaging based on what you want.";
     }
 
     @Override

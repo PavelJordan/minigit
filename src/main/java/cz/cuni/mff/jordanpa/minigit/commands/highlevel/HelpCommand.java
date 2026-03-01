@@ -28,7 +28,7 @@ public final class HelpCommand implements Command {
             Map<String, Command> plugins = PluginLoader.getLoadedPlugins();
             System.out.println("Usage: minigit <command> [<args>]");
             System.out.println("Available commands:");
-            plugins.values().forEach(command -> System.out.println(command.name() + ": " + command.shortHelp()));
+            plugins.values().forEach(command -> System.out.println("\n" + command.name() + ": " + command.shortHelp()));
         }
         catch (Exception e) {
             IO.println(e);

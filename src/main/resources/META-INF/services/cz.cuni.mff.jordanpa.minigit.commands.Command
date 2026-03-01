@@ -18,3 +18,4 @@ cz.cuni.mff.jordanpa.minigit.commands.highlevel.RefsCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.TagCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.BranchDeleteCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.TagDeleteCommand
+cz.cuni.mff.jordanpa.minigit.commands.highlevel.AddIgnoredCommand

@@ -1,6 +1,7 @@
 package cz.cuni.mff.jordanpa.minigit.structures;
 
 import cz.cuni.mff.jordanpa.minigit.misc.Author;
+import cz.cuni.mff.jordanpa.minigit.misc.FileHelper;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -38,6 +39,7 @@ public final class Repository {
     private final Path headPath;
     private final Path authorPath; // Not in remote!
     private final Path refPath;
+    private final Path ignoredPath;
     private Head head;
 
     public Head getHead(){
@@ -56,6 +58,7 @@ public final class Repository {
         this.headPath = path.resolve("HEAD");
         this.authorPath = path.resolve("author");
         this.refPath = path.resolve("refs");
+        this.ignoredPath = path.resolve("../.minigitignore").normalize();
     }
 
     public Map<String, String> getBranches() {
@@ -83,6 +86,7 @@ public final class Repository {
         repo.loadRef();
         repo.loadIndex();
         repo.loadCurrentAuthor();
+        repo.loadIgnored();
         return repo;
     }
 
@@ -133,7 +137,7 @@ public final class Repository {
     public void addToIndex(Path... files) {
         for (Path file : files) {
             try {
-                if (!Files.exists(file)) {
+                if (!Files.exists(file) || FileHelper.isExcluded(file, getIgnored())) {
                     stagedIndex.remove(file);
                     continue;
                 }
@@ -363,27 +367,6 @@ public final class Repository {
         return statuses;
     }
 
-    private List<Path> getPaths(Path path) {
-        ArrayList<Path> paths = new ArrayList<>();
-        try(var dirStream = Files.newDirectoryStream(path)) {
-            for (Path entry : dirStream) {
-                if (entry.getFileName().toString().equals(".minigit")) {
-                    continue;
-                }
-                if (Files.isDirectory(entry)) {
-                    paths.addAll(getPaths(entry));
-                }
-                else {
-                    paths.add(entry.normalize());
-                }
-            }
-        }
-        catch(IOException e) {
-            IO.println(e);
-        }
-        return paths;
-    }
-
     public void setHeadToCommit(Commit commit) {
         head = new Head(Head.Type.COMMIT, commit.miniGitSha1());
     }
@@ -421,7 +404,7 @@ public final class Repository {
     }
 
     public HashMap<Path, String> getIndexOfWorkingDirectory() throws IOException {
-        List<Path> paths = getPaths(Path.of("./"));
+        List<Path> paths = FileHelper.getAllFiles(Path.of("./"), getIgnored());
         HashMap<Path, String> workingDirIndex = new HashMap<>();
         for(Path path : paths) {
             String hash = new Blob(path).miniGitSha1();
@@ -487,5 +470,20 @@ public final class Repository {
 
     public void setTag(String arg, String data) {
         tags.put(arg, data);
+    }
+
+    private final List<String> ignored = new ArrayList<>();
+
+    public List<String> getIgnored() throws IOException {
+        return ignored;
+    }
+
+    private void loadIgnored() throws IOException {
+        if (Files.exists(ignoredPath)) {
+            try (var ignoredStream = Files.newBufferedReader(ignoredPath)) {
+                ignoredStream.lines().filter(s -> !s.isEmpty()).forEach(ignored::add);
+            }
+        }
+        ignored.add(repoPath.normalize().toString() + "/");
     }
 }
