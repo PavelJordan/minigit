@@ -33,6 +33,8 @@ public final class StatusCommand implements Command {
             List<Repository.FileStatus> workToIndex = repo.getWorkingToIndexStatus();
             List<Repository.FileStatus> indexToHead = repo.getStagedToLastCommitStatus();
 
+            // All code below is ChatGPT coded - I just provided the data with the format I came up with.
+
             boolean hasHead = repo.getHead().type() != Head.Type.UNSET;
 
             var w = groupByType(workToIndex);

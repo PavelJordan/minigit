@@ -7,6 +7,7 @@ import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Scanner;
 
 public final class LogCommand implements Command{
     @Override
@@ -26,7 +27,8 @@ public final class LogCommand implements Command{
 
     @Override
     public int execute(String[] args) {
-        try {
+        try (Scanner scanner = new Scanner(System.in)) {
+            IO.println("Enter with some text to quit.");
             Repository repo = Repository.load(Path.of(".minigit"));
             Head currentHead = repo.getHead();
             if (currentHead.type() == Head.Type.UNSET) {
@@ -55,7 +57,10 @@ public final class LogCommand implements Command{
                     IO.println("Commit chain is branched - cannot handle that yet");
                     return 0;
                 }
-                IO.println();
+                String input = scanner.nextLine();
+                if (!input.isEmpty()) {
+                    return 0;
+                }
             }
         } catch (IOException e) {
             IO.println(e);
