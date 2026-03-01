@@ -34,7 +34,7 @@ public final class TreeCheckoutCommand implements Command{
             Repository repo = Repository.load(Path.of(".minigit"));
             MiniGitObject possiblyTree = repo.loadFromInternal(treeHash);
             if (possiblyTree instanceof Tree tree) {
-                repo.restoreTree(tree);
+                repo.checkoutTree(tree);
             }
             else {
                 IO.println("Object with specified hash is not a tree.");

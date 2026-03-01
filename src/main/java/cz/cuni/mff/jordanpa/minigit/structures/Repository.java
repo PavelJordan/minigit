@@ -166,9 +166,9 @@ public final class Repository {
         return Map.copyOf(stagedIndex);
     }
 
-    public void restoreTree(Tree treeToRestore) throws IOException {
-        List<FileStatus> statusesStaged = getStatusWorkingToIndex();
-        List<FileStatus> statusesCommited = getStatusIndexToCommit();
+    public void checkoutTree(Tree treeToRestore) throws IOException {
+        List<FileStatus> statusesStaged = getWorkingToIndexStatus();
+        List<FileStatus> statusesCommited = getStagedToLastCommitStatus();
         if (statusesStaged.stream().anyMatch(status -> status.status() != FileStatusType.TRACKED && status.status() != FileStatusType.UNTRACKED)) {
             throw new IOException("Cannot restore tree. There are unstaged uncommitted changes.");
         }
@@ -179,7 +179,7 @@ public final class Repository {
         if (loadFromInternal(CurrentRoot.miniGitSha1()) == null) {
             throw new IOException("Cannot restore tree. Current root tree is not in repository. Use tree command to build it.");
         }
-        for (FileStatus status : statusesStaged) {
+        for (FileStatus status : statusesStaged.stream().filter(s -> s.status() == FileStatusType.TRACKED).toList()) {
             if (status.status() == FileStatusType.TRACKED) {
                 IO.println("Deleting tracked file " + status.path());
                 Files.delete(status.path());
@@ -187,6 +187,10 @@ public final class Repository {
         }
         stagedIndex = getIndexOfTree(treeToRestore);
         IO.println("Restoring tree...");
+        internalForcedCheckoutTree();
+    }
+
+    private void internalForcedCheckoutTree() {
         for (HashMap.Entry<Path, String> entry : stagedIndex.entrySet()) {
             MiniGitObject possibleBlobToRestore = loadFromInternal(entry.getValue());
             if (possibleBlobToRestore instanceof Blob blobToRestore) {
@@ -207,15 +211,19 @@ public final class Repository {
         }
     }
 
-    public List<FileStatus> getStatusIndexToCommit() throws IOException {
+    public List<FileStatus> getStagedToLastCommitStatus() throws IOException {
         ensureHeadLoaded();
-        HashMap<Path, String> commitIndex;
+        HashMap<Path, String> commitIndex = getCommitIndexFromHead();
+        return getFileStatusesFromComparison(stagedIndex, commitIndex);
+    }
+
+    private HashMap<Path, String> getCommitIndexFromHead() throws IOException {
         if (head.type() == Head.Type.COMMIT) {
             MiniGitObject maybeCommit = loadFromInternal(head.hash());
             if (maybeCommit instanceof Commit commit) {
                 MiniGitObject maybeTree = loadFromInternal(commit.getTreeHash());
                 if (maybeTree instanceof Tree tree) {
-                    commitIndex = getIndexOfTree(tree);
+                    return getIndexOfTree(tree);
                 }
                 else {
                     throw new IOException("Cannot restore tree. Tree is not in repository.");
@@ -230,18 +238,17 @@ public final class Repository {
         }
         else {
             IO.println("No commit yet");
-            return Collections.emptyList();
+            return new HashMap<>();
         }
-        return getFileStatuses(stagedIndex, commitIndex);
     }
 
-    public List<FileStatus> getStatusWorkingToIndex() throws IOException {
+    public List<FileStatus> getWorkingToIndexStatus() throws IOException {
         ensureIndexLoaded();
         HashMap<Path, String> workingDirIndex = getIndexOfWorkingDirectory();
-        return getFileStatuses(workingDirIndex, stagedIndex);
+        return getFileStatusesFromComparison(workingDirIndex, stagedIndex);
     }
 
-    private List<FileStatus> getFileStatuses(HashMap<Path, String> currentIndex, HashMap<Path, String> indexToCompare) {
+    private List<FileStatus> getFileStatusesFromComparison(HashMap<Path, String> currentIndex, HashMap<Path, String> indexToCompare) {
         List<FileStatus> statuses = new ArrayList<>();
         for (Path path : currentIndex.keySet()) {
             String workingDirectoryHash = currentIndex.get(path);

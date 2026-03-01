@@ -30,8 +30,8 @@ public final class StatusCommand implements Command {
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
 
-            List<Repository.FileStatus> workToIndex = repo.getStatusWorkingToIndex();
-            List<Repository.FileStatus> indexToHead = repo.getStatusIndexToCommit();
+            List<Repository.FileStatus> workToIndex = repo.getWorkingToIndexStatus();
+            List<Repository.FileStatus> indexToHead = repo.getStagedToLastCommitStatus();
 
             boolean hasHead = repo.getHead().type() != Head.Type.UNSET;
 
