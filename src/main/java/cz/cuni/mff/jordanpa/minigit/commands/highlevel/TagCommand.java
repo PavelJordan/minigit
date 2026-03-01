@@ -42,6 +42,7 @@ public final class TagCommand implements Command {
             else if (head.type() == Head.Type.BRANCH) {
                 repo.setTag(args[0], repo.getBranches().get(head.data()));
             }
+            IO.println("Tag " + args[0] + " created.");
             repo.save();
         } catch (IOException e) {
             throw new RuntimeException(e);

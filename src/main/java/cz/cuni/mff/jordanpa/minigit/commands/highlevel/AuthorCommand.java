@@ -34,6 +34,7 @@ public final class AuthorCommand implements Command {
             Repository repo = Repository.load(Path.of(".minigit"));
             repo.setCurrentAuthor(new Author(args[0], args[1]));
             repo.save();
+            IO.println("Author set.");
         } catch (IOException e) {
             IO.println(e);
             return 1;

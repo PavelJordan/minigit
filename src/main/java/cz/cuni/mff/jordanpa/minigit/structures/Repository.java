@@ -62,8 +62,16 @@ public final class Repository {
         return Map.copyOf(branches);
     }
 
+    public void deleteBranch(String branchName) {
+        branches.remove(branchName);
+    }
+
     public Map<String, String> getTags() {
         return Map.copyOf(tags);
+    }
+
+    public void deleteTag(String tagName) {
+        tags.remove(tagName);
     }
 
     public static Repository load(Path loadFrom) throws IOException {
