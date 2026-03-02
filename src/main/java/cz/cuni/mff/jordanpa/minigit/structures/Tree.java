@@ -1,5 +1,7 @@
 package cz.cuni.mff.jordanpa.minigit.structures;
 
+import cz.cuni.mff.jordanpa.minigit.misc.FileHelper;
+
 import java.io.*;
 import java.nio.file.Path;
 import java.util.*;
@@ -54,7 +56,9 @@ public final class Tree extends MiniGitObject implements TreeContent {
      * Create a new tree with the specified structure. The files (blobs) and trees must be saved in the database manually!
      * The last tree in the list is the root tree.
      */
-    public static LinkedList<Tree> buildTree(Map<Path, String> files) {
+    public static LinkedList<Tree> buildTree(Map<Path, String> filesToBuild, Path root) {
+        HashMap<Path, String> files = new HashMap<>();
+        filesToBuild.forEach((path, hash) -> files.put(FileHelper.getRelativePathToDirectory(path, root), hash));
         HashSet<Path> treesHere = new HashSet<>();
         LinkedList<Tree> trees = new LinkedList<>();
         HashMap<String, TreeEntry> contents = new HashMap<>();
@@ -71,7 +75,7 @@ public final class Tree extends MiniGitObject implements TreeContent {
         for (Path dir : treesHere) {
             HashMap<Path, String> filesInDir = new HashMap<>();
             files.entrySet().stream().filter(entry -> entry.getKey().startsWith(dir)).forEach(entry -> filesInDir.put(entry.getKey().subpath(1, entry.getKey().getNameCount()), entry.getValue()));
-            LinkedList<Tree> lowerTrees = buildTree(filesInDir);
+            LinkedList<Tree> lowerTrees = buildTree(filesInDir, root.resolve(dir));
             if (lowerTrees.isEmpty()) {
                 IO.println("Building failed here");
                 continue;
@@ -79,8 +83,8 @@ public final class Tree extends MiniGitObject implements TreeContent {
             contents.put(dir.getFileName().toString(), new TreeEntry(lowerTrees.getLast().miniGitSha1(), TreeEntryType.TREE));
             trees.addAll(lowerTrees);
         }
-        Tree root = new Tree(contents);
-        trees.add(root);
+        Tree treeRoot = new Tree(contents);
+        trees.add(treeRoot);
         return trees;
     }
 

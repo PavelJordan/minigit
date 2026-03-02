@@ -33,13 +33,29 @@ public final class Repository {
     private final HashMap<String, String> branches = new HashMap<>();
     private final HashMap<String, String> tags = new HashMap<>();
     private Author currentAuthor = null;
-    private final Path repoPath;
+    private final Path mainRepoPath;
+    private final Path repoInternalPath;
     private final Path objectsPath;
     private final Path indexPath;
     private final Path headPath;
     private final Path authorPath; // Not in remote!
     private final Path refPath;
     private final Path ignoredPath;
+    private Path mainRepoAbsPath() { return mainRepoPath.toAbsolutePath().normalize(); }
+    private Path cwdAbsPath()  { return Path.of("").toAbsolutePath().normalize(); }
+    private Path safeAbsFromCwdRelative(Path p) throws IOException {
+        Path abs = cwdAbsPath().resolve(p).normalize();
+        if (!abs.startsWith(mainRepoAbsPath())) {
+            throw new IOException("Path escapes repository: " + p);
+        }
+        return abs;
+    }
+
+    private Path getPathRelativeToRepo(Path cwdRelative) throws IOException {
+        Path abs = safeAbsFromCwdRelative(cwdRelative);
+        return mainRepoAbsPath().relativize(abs).normalize();
+    }
+
     private Head head;
 
     public Head getHead(){
@@ -47,18 +63,23 @@ public final class Repository {
     }
 
     /**
-     * Map path -> data.
+     * Map path -> data. In memory are relative paths
      */
     private HashMap<Path, String> stagedIndex;
 
     public Repository(Path path) {
-        this.repoPath = path;
+        this.repoInternalPath = path;
+        this.mainRepoPath = path.resolve("../").normalize();
         this.objectsPath = path.resolve("objects");
         this.indexPath = path.resolve("index");
         this.headPath = path.resolve("HEAD");
         this.authorPath = path.resolve("author");
         this.refPath = path.resolve("refs");
         this.ignoredPath = path.resolve("../.minigitignore").normalize();
+    }
+
+    public Path getRepoDirectory() {
+        return mainRepoPath;
     }
 
     public Map<String, String> getBranches() {
@@ -78,8 +99,12 @@ public final class Repository {
     }
 
     public static Repository load(Path loadFrom) throws IOException {
+        final int toSearch = 10;
+        for (int i = 0; !Files.exists(loadFrom) && i < toSearch; i++) {
+            loadFrom = Path.of("../").resolve(loadFrom).normalize();
+        }
         if (!Files.exists(loadFrom)) {
-            throw new IOException("Repository does not exist.");
+            throw new IOException("Repository does not exist. Searched up to " + loadFrom);
         }
         Repository repo = new Repository(loadFrom);
         repo.loadHead();
@@ -89,7 +114,6 @@ public final class Repository {
         repo.loadIgnored();
         return repo;
     }
-
 
     public void storeInternally(MiniGitObject obj) {
         if (!objects.containsKey(obj.miniGitSha1())) {
@@ -136,18 +160,19 @@ public final class Repository {
 
     public void addToIndex(Path... files) {
         for (Path file : files) {
+            Path normalized = file.normalize();
             try {
-                if (!Files.exists(file) || FileHelper.isExcluded(file, getIgnored())) {
-                    stagedIndex.remove(file);
+                if (!Files.exists(normalized) || FileHelper.isExcluded(normalized, getIgnored())) {
+                    stagedIndex.remove(normalized);
                     continue;
                 }
-                Blob blob = new Blob(file);
-                stagedIndex.put(file, blob.miniGitSha1());
+                Blob blob = new Blob(normalized);
+                stagedIndex.put(normalized, blob.miniGitSha1());
                 storeInternally(blob);
             }
             catch(IOException e) {
                 IO.println(e);
-                IO.println("Error adding file " + file + " to index. Continuing...");
+                IO.println("Error adding file " + normalized + " to index. Continuing...");
             }
         }
     }
@@ -163,7 +188,8 @@ public final class Repository {
                 int delimiterIndex = nextLine.indexOf(' ');
                 String hash = nextLine.substring(0, delimiterIndex);
                 Path path = Path.of(nextLine.substring(delimiterIndex + 1)).normalize();
-                stagedIndex.put(path, hash);
+                Path resolvedPath = FileHelper.getRelativePathToDirectory(mainRepoPath.resolve(path), Path.of("./"));
+                stagedIndex.put(resolvedPath, hash);
             }
         }
     }
@@ -181,7 +207,7 @@ public final class Repository {
         }
         try (var out = Files.newBufferedWriter(indexPath)) {
             for (Map.Entry<Path, String> entry : stagedIndex.entrySet()) {
-                out.write(entry.getValue() + " " + entry.getKey().normalize() + "\n");
+                out.write(entry.getValue() + " " + getPathRelativeToRepo(entry.getKey()) + "\n");
             }
         }
     }
@@ -268,7 +294,7 @@ public final class Repository {
         if (statusesCommited.stream().anyMatch(status -> status.status() != FileStatusType.SAME && status.status() != FileStatusType.NEW)) {
             throw new IOException("Cannot restore tree. There are staged uncommitted changes.");
         }
-        Tree CurrentRoot = Tree.buildTree(stagedIndex).getLast();
+        Tree CurrentRoot = Tree.buildTree(stagedIndex, mainRepoPath).getLast();
         if (loadFromInternal(CurrentRoot.miniGitSha1()) == null) {
             throw new IOException("Cannot restore tree. Current root tree is not in repository. Use tree command to build it.");
         }
@@ -279,7 +305,7 @@ public final class Repository {
         for (FileStatus status : statusesStaged.stream().filter(s -> s.status() == FileStatusType.SAME).toList()) {
             if (status.status() == FileStatusType.SAME) {
                 IO.println("Deleting tracked file " + status.path());
-                Files.delete(status.path());
+                Files.delete(safeAbsFromCwdRelative(status.path()));
             }
         }
         stagedIndex = getIndexOfTree(treeToRestore);
@@ -291,13 +317,14 @@ public final class Repository {
         for (HashMap.Entry<Path, String> entry : stagedIndex.entrySet()) {
             MiniGitObject possibleBlobToRestore = loadFromInternal(entry.getValue());
             if (possibleBlobToRestore instanceof Blob blobToRestore) {
-                if (Files.exists(entry.getKey())) {
-                    IO.println("File " + entry.getKey() + " already exists. Cannot overwrite!");
+                Path absTarget = safeAbsFromCwdRelative(entry.getKey());
+                if (Files.exists(absTarget)) {
+                    IO.println("File " + absTarget + " already exists. Cannot overwrite!");
                     return;
                 }
-                IO.println("Restoring file " + entry.getKey() + "...");
+                IO.println("Restoring file " + absTarget + "...");
                 try {
-                    blobToRestore.writeContentsTo(entry.getKey());
+                    blobToRestore.writeContentsTo(absTarget);
                 } catch (IOException e) {
                     IO.println(e);
                 }
@@ -376,7 +403,7 @@ public final class Repository {
     }
 
     HashMap<Path, String> getIndexOfTree(Tree tree) throws IOException {
-        return getIndexOfTreeInternal(tree, Path.of("./"));
+        return new HashMap<>(getIndexOfTreeInternal(tree, mainRepoPath));
     }
 
     private HashMap<Path, String> getIndexOfTreeInternal(Tree tree, Path pathSoFar) throws IOException {
@@ -392,7 +419,8 @@ public final class Repository {
                     IO.println("Object with specified data is not a tree, even though it should. Repository is corrupted.");
                 }
             } else if (value.type() == Tree.TreeEntryType.BLOB) {
-                treeIndex.put(pathSoFar.resolve(name).normalize(), value.hash());
+                Path resolvedPath = FileHelper.getRelativePathToDirectory(pathSoFar.resolve(name), Path.of("./"));
+                treeIndex.put(resolvedPath, value.hash());
 
             }
         }
@@ -404,11 +432,11 @@ public final class Repository {
     }
 
     public HashMap<Path, String> getIndexOfWorkingDirectory() throws IOException {
-        List<Path> paths = FileHelper.getAllFiles(Path.of("./"), getIgnored());
+        List<Path> paths = FileHelper.getAllFiles(mainRepoPath, getIgnored());
         HashMap<Path, String> workingDirIndex = new HashMap<>();
         for(Path path : paths) {
             String hash = new Blob(path).miniGitSha1();
-            workingDirIndex.put(path, hash);
+            workingDirIndex.put(path.normalize(), hash);
         }
         return workingDirIndex;
     }
@@ -484,6 +512,6 @@ public final class Repository {
                 ignoredStream.lines().filter(s -> !s.isEmpty()).forEach(ignored::add);
             }
         }
-        ignored.add(repoPath.normalize().toString() + "/");
+        ignored.add(repoInternalPath.normalize().toString() + "/");
     }
 }

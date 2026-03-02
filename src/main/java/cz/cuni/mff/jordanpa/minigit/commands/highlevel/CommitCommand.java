@@ -50,7 +50,7 @@ public final class CommitCommand implements Command {
                 return 0;
             }
             Map<Path, String> trackedFiles = repo.getTrackedFiles();
-            List<Tree> trees = Tree.buildTree(trackedFiles);
+            List<Tree> trees = Tree.buildTree(trackedFiles, repo.getRepoDirectory());
             Commit commit = getCommit(trees, repo, args[0], author);
             repo.storeInternally(commit);
             trees.forEach(repo::storeInternally);
