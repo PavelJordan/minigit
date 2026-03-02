@@ -59,6 +59,10 @@ public final class Tree extends MiniGitObject implements TreeContent {
     public static LinkedList<Tree> buildTree(Map<Path, String> filesToBuild, Path root) {
         HashMap<Path, String> files = new HashMap<>();
         filesToBuild.forEach((path, hash) -> files.put(FileHelper.getRelativePathToDirectory(path, root), hash));
+        return buildTreeInternal(files);
+    }
+
+    private static LinkedList<Tree> buildTreeInternal(Map<Path, String> files) {
         HashSet<Path> treesHere = new HashSet<>();
         LinkedList<Tree> trees = new LinkedList<>();
         HashMap<String, TreeEntry> contents = new HashMap<>();
@@ -75,7 +79,7 @@ public final class Tree extends MiniGitObject implements TreeContent {
         for (Path dir : treesHere) {
             HashMap<Path, String> filesInDir = new HashMap<>();
             files.entrySet().stream().filter(entry -> entry.getKey().startsWith(dir)).forEach(entry -> filesInDir.put(entry.getKey().subpath(1, entry.getKey().getNameCount()), entry.getValue()));
-            LinkedList<Tree> lowerTrees = buildTree(filesInDir, root.resolve(dir));
+            LinkedList<Tree> lowerTrees = buildTreeInternal(filesInDir);
             if (lowerTrees.isEmpty()) {
                 IO.println("Building failed here");
                 continue;

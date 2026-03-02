@@ -51,6 +51,11 @@ public final class Repository {
         return abs;
     }
 
+    private boolean isInRepo(Path p) {
+        Path abs = cwdAbsPath().resolve(p).normalize();
+        return abs.startsWith(mainRepoAbsPath());
+    }
+
     private Path getPathRelativeToRepo(Path cwdRelative) throws IOException {
         Path abs = safeAbsFromCwdRelative(cwdRelative);
         return mainRepoAbsPath().relativize(abs).normalize();
@@ -158,22 +163,27 @@ public final class Repository {
         saveCurrentAuthor();
     }
 
-    public void addToIndex(Path... files) {
-        for (Path file : files) {
-            Path normalized = file.normalize();
-            try {
-                if (!Files.exists(normalized) || FileHelper.isExcluded(normalized, getIgnored())) {
-                    stagedIndex.remove(normalized);
-                    continue;
-                }
-                Blob blob = new Blob(normalized);
-                stagedIndex.put(normalized, blob.miniGitSha1());
-                storeInternally(blob);
+    public boolean addToIndex(Path file) {
+        // Ignore files not belonging to the repository - useful when working with multiple repositories.
+        if (!isInRepo(file)) {
+            return false;
+        }
+        try {
+        Path abs = safeAbsFromCwdRelative(file.normalize());
+        Path normalized = cwdAbsPath().relativize(abs).normalize();
+            if (!Files.exists(abs) || FileHelper.isExcluded(normalized, getIgnored())) {
+                stagedIndex.remove(normalized);
+                return true;
             }
-            catch(IOException e) {
-                IO.println(e);
-                IO.println("Error adding file " + normalized + " to index. Continuing...");
-            }
+            Blob blob = new Blob(abs);
+            stagedIndex.put(normalized, blob.miniGitSha1());
+            storeInternally(blob);
+            return true;
+        }
+        catch(IOException e) {
+            IO.println(e);
+            IO.println("Error adding file " + file + " to index. Continuing...");
+            return false;
         }
     }
 

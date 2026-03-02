@@ -1,10 +1,12 @@
 package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 
 import cz.cuni.mff.jordanpa.minigit.commands.Command;
+import cz.cuni.mff.jordanpa.minigit.misc.ProjectManager;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
 public final class RestoreStagedCommand implements Command {
     @Override
@@ -19,16 +21,20 @@ public final class RestoreStagedCommand implements Command {
 
     @Override
     public String help() {
-        return "Unstage all changes";
+        return "Unstage all changes in this repository, or multiple repos in project manager dir.";
     }
 
     @Override
     public int execute(String[] args) {
         try {
-            Repository repo = Repository.load(Path.of(".minigit"));
-            repo.unstageToLastCommit();
-            IO.println("Everything unstaged.");
-            repo.save();
+            List<Repository> repos = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
+            for (Repository repo : repos) {
+                IO.println("Restoring " + repo.getRepoDirectory() + " ...");
+                repo.unstageToLastCommit();
+                repo.save();
+                IO.println("Everything unstaged in " + repo.getRepoDirectory());
+            }
+
         } catch (IOException e) {
             IO.println(e);
             return 1;

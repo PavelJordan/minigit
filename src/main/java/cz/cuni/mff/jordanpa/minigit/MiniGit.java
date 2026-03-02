@@ -16,7 +16,8 @@ public class MiniGit {
     static void main(String[] args) {
         Map<String, Command> plugins = PluginLoader.getLoadedPlugins();
         if (args.length == 0) {
-            System.exit(new HelpCommand().execute(new String[0]));
+            IO.println("Usage: minigit <command> [<args>]. Type minigit help for list of available commands.");
+            System.exit(1);
         }
         else {
             Command cmd = plugins.get(args[0]);

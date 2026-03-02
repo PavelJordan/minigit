@@ -27,8 +27,9 @@ public final class InitCommand implements Command {
     @Override
     public int execute(String[] args) {
         Path minigitPath = Path.of(".minigit");
-        if (Files.exists(minigitPath)) {
-            IO.println("Repository already exists in this directory.");
+        Path topMiniGitPath = Path.of(".topminigit");
+        if (Files.exists(minigitPath) || Files.exists(topMiniGitPath)) {
+            IO.println("Repository can't be created in this directory because it already exists or it is a project manager directory.");
             return 1;
         }
         try {

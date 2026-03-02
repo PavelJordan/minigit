@@ -19,3 +19,7 @@ cz.cuni.mff.jordanpa.minigit.commands.highlevel.TagCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.BranchDeleteCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.TagDeleteCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.AddIgnoredCommand
+cz.cuni.mff.jordanpa.minigit.commands.highlevel.ProjectsInitCommand
+cz.cuni.mff.jordanpa.minigit.commands.highlevel.ProjectAddCommand
+cz.cuni.mff.jordanpa.minigit.commands.highlevel.ProjectRemoveCommand
+cz.cuni.mff.jordanpa.minigit.commands.highlevel.ProjectsCommand

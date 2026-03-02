@@ -3,6 +3,7 @@ package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 import cz.cuni.mff.jordanpa.minigit.commands.Command;
 import cz.cuni.mff.jordanpa.minigit.commands.PluginLoader;
 
+import java.util.Comparator;
 import java.util.Map;
 
 public final class HelpCommand implements Command {
@@ -28,7 +29,7 @@ public final class HelpCommand implements Command {
             Map<String, Command> plugins = PluginLoader.getLoadedPlugins();
             System.out.println("Usage: minigit <command> [<args>]");
             System.out.println("Available commands:");
-            plugins.values().forEach(command -> System.out.println("\n" + command.name() + ": " + command.shortHelp()));
+            plugins.values().stream().sorted(Comparator.comparing(Command::name)).forEach(command -> System.out.println("  " + command.name() + " ".repeat(20 - command.name().length()) + command.shortHelp()));
         }
         catch (Exception e) {
             IO.println(e);

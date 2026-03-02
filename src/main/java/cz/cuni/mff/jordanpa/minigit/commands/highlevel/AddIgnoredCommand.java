@@ -2,6 +2,7 @@ package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 
 import cz.cuni.mff.jordanpa.minigit.commands.Command;
 import cz.cuni.mff.jordanpa.minigit.misc.FileHelper;
+import cz.cuni.mff.jordanpa.minigit.misc.ProjectManager;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ public final class AddIgnoredCommand implements Command {
 
     @Override
     public String help() {
-        return "Stages specified ignored files for deletion. Works well if you want to delete newly ignored files.";
+        return "Stages specified ignored files for deletion. Works well if you want to delete newly ignored files. Works in repos and multiple repos in project manager.";
     }
 
     @Override
@@ -31,18 +32,21 @@ public final class AddIgnoredCommand implements Command {
             return 1;
         }
         try {
-            Repository repo = Repository.load(Path.of(".minigit"));
-            List<String> ignored = repo.getIgnored();
-            for (String pattern : args) {
-                for (Path file: FileHelper.getAllFiles(Path.of(pattern), List.of())) {
-                    if (FileHelper.isExcluded(file, ignored)) {
-                        IO.println("Staging ignored file " + file + " for deletion...");
-                        repo.addToIndex(file);
+            List<Repository> repos = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
+            for (Repository repo : repos) {
+                IO.println("Updating " + repo.getRepoDirectory() + " ...");
+                List<String> ignored = repo.getIgnored();
+                for (String pattern : args) {
+                    for (Path file: FileHelper.getAllFiles(Path.of(pattern), List.of())) {
+                        if (FileHelper.isExcluded(file, ignored)) {
+                            IO.println("Staging ignored file " + file + " for deletion...");
+                            repo.addToIndex(file);
+                        }
                     }
                 }
+                repo.save();
+                IO.println("Done.");
             }
-            repo.save();
-            IO.println("Done.");
         }
         catch (IOException e) {
             IO.println(e);

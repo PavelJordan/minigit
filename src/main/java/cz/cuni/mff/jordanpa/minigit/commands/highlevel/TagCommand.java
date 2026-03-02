@@ -1,11 +1,13 @@
 package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 
 import cz.cuni.mff.jordanpa.minigit.commands.Command;
+import cz.cuni.mff.jordanpa.minigit.misc.ProjectManager;
 import cz.cuni.mff.jordanpa.minigit.structures.Head;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 
 public final class TagCommand implements Command {
     @Override
@@ -20,7 +22,7 @@ public final class TagCommand implements Command {
 
     @Override
     public String help() {
-        return "Create single tag from HEAD with a name.";
+        return "Create single tag from HEAD with a name in this repo or multiple repos in project manager dir.";
     }
 
     @Override
@@ -30,15 +32,19 @@ public final class TagCommand implements Command {
             return 1;
         }
         try {
-            Repository repo = Repository.load(Path.of(".minigit"));
-            String hashToTag = repo.getHeadCommitHash();
-            if (hashToTag == null) {
-                IO.println("No commits yet.");
-                return 1;
+            List<Repository> repos = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
+            for (Repository repo : repos) {
+                IO.println("Creating tag " + args[0] + " in " + repo.getRepoDirectory() + " ...");
+                String hashToTag = repo.getHeadCommitHash();
+                if (hashToTag == null) {
+                    IO.println("No commits yet.");
+                    continue;
+                }
+                repo.setTag(args[0], hashToTag);
+                repo.save();
+                IO.println("Tag " + args[0] + " created.");
             }
-            repo.setTag(args[0], hashToTag);
-            IO.println("Tag " + args[0] + " created.");
-            repo.save();
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -7,7 +7,6 @@ import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.Scanner;
 
 public final class LogCommand implements Command {

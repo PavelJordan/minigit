@@ -2,11 +2,12 @@ package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 
 import cz.cuni.mff.jordanpa.minigit.commands.Command;
 import cz.cuni.mff.jordanpa.minigit.misc.FileHelper;
+import cz.cuni.mff.jordanpa.minigit.misc.ProjectManager;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
+import java.util.*;
 
 public final class AddCommand implements Command {
     @Override
@@ -21,7 +22,7 @@ public final class AddCommand implements Command {
 
     @Override
     public String help() {
-        return "Add/update files into the staging area (index). You can provide list of files to add as arguments.";
+        return "Add/update files into the staging area (index) in repo or all repos in project manager. You can provide list of files to add as arguments.";
     }
 
     @Override
@@ -31,16 +32,21 @@ public final class AddCommand implements Command {
             return 1;
         }
         try {
-            Repository repo = Repository.load(Path.of(".minigit"));
-            List<String> toIgnore = repo.getIgnored();
-            for (String pattern : args) {
-                for (Path file: FileHelper.getAllFiles(Path.of(pattern), toIgnore)) {
-                    IO.println("Adding changes of " + file + "...");
-                    repo.addToIndex(file);
+            List<Repository> reposHere = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
+            for (Repository repo : reposHere) {
+                IO.println("Updating " + repo.getRepoDirectory() + " ...");
+                List<String> toIgnore = repo.getIgnored();
+                for (String pattern : args) {
+                    for (Path file: FileHelper.getAllFiles(Path.of(pattern), toIgnore)) {
+                        boolean successful = repo.addToIndex(file);
+                        if (successful) {
+                            IO.println("Staging " + file + "...");
+                        }
+                    }
                 }
+                repo.save();
+                IO.println("Done.");
             }
-            repo.save();
-            IO.println("Done.");
         }
         catch (IOException e) {
             IO.println(e);
