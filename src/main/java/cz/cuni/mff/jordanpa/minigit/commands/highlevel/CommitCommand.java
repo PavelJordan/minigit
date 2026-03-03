@@ -2,6 +2,7 @@ package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 
 import cz.cuni.mff.jordanpa.minigit.commands.Command;
 import cz.cuni.mff.jordanpa.minigit.misc.Author;
+import cz.cuni.mff.jordanpa.minigit.misc.ProjectManager;
 import cz.cuni.mff.jordanpa.minigit.structures.Commit;
 import cz.cuni.mff.jordanpa.minigit.structures.Head;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
@@ -38,38 +39,41 @@ public final class CommitCommand implements Command {
             return 1;
         }
         try {
-            Repository repo = Repository.load(Path.of(".minigit"));
-            Author author = repo.getCurrentAuthor();
-            if (author == null) {
-                IO.println("No author set. Use 'minigit author <name> <email>' to set one.");
-                return 1;
+            List<Repository> repos = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
+            for (Repository repo : repos) {
+                IO.println("Committing " + repo.getRepoDirectory() + " ...");
+                Author author = repo.getCurrentAuthor();
+                if (author == null) {
+                    IO.println("No author set. Use 'minigit author <name> <email>' to set one.");
+                    continue;
+                }
+                List<Repository.FileStatus> stagedToLastCommitStatus = repo.getStagedToLastCommitStatus();
+                if (stagedToLastCommitStatus.stream().allMatch(status -> status.status() == Repository.FileStatusType.SAME)) {
+                    IO.println("There is nothing to commit.");
+                    continue;
+                }
+                Map<Path, String> trackedFiles = repo.getTrackedFiles();
+                List<Tree> trees = Tree.buildTree(trackedFiles, repo.getRepoDirectory());
+                Commit commit = getCommit(trees, repo, args[0], author);
+                repo.storeInternally(commit);
+                trees.forEach(repo::storeInternally);
+                if (repo.getHead().type() == Head.Type.BRANCH) {
+                    IO.println("Committing to branch " + repo.getHead().data());
+                    repo.setBranch(repo.getHead().data(), commit.miniGitSha1());
+                    repo.setHeadToBranch(repo.getHead().data());
+                }
+                else if (repo.getHead().type() == Head.Type.UNSET) {
+                    IO.println("No HEAD yet. Creating master branch.");
+                    repo.setBranch(FIRST_BRANCH_NAME, commit.miniGitSha1());
+                    repo.setHeadToBranch(FIRST_BRANCH_NAME);
+                }
+                else {
+                    IO.println("Committing to detached state");
+                    repo.setHeadToCommit(commit);
+                }
+                repo.save();
+                IO.println("Successfully committed " + repo.getRepoDirectory() + ". Commit data is: " + commit.miniGitSha1());
             }
-            List<Repository.FileStatus> stagedToLastCommitStatus = repo.getStagedToLastCommitStatus();
-            if (stagedToLastCommitStatus.stream().allMatch(status -> status.status() == Repository.FileStatusType.SAME)) {
-                IO.println("There is nothing to commit.");
-                return 0;
-            }
-            Map<Path, String> trackedFiles = repo.getTrackedFiles();
-            List<Tree> trees = Tree.buildTree(trackedFiles, repo.getRepoDirectory());
-            Commit commit = getCommit(trees, repo, args[0], author);
-            repo.storeInternally(commit);
-            trees.forEach(repo::storeInternally);
-            if (repo.getHead().type() == Head.Type.BRANCH) {
-                IO.println("Committing to branch " + repo.getHead().data());
-                repo.setBranch(repo.getHead().data(), commit.miniGitSha1());
-                repo.setHeadToBranch(repo.getHead().data());
-            }
-            else if (repo.getHead().type() == Head.Type.UNSET) {
-                IO.println("No HEAD yet. Creating master branch.");
-                repo.setBranch(FIRST_BRANCH_NAME, commit.miniGitSha1());
-                repo.setHeadToBranch(FIRST_BRANCH_NAME);
-            }
-            else {
-                IO.println("Committing to detached state");
-                repo.setHeadToCommit(commit);
-            }
-            repo.save();
-            IO.println("Successfully committed. Commit data is: " + commit.miniGitSha1());
         } catch (IOException e) {
             IO.println(e);
         }
