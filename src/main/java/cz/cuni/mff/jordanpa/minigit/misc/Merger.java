@@ -6,10 +6,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import static cz.cuni.mff.jordanpa.minigit.misc.CommonAncestorFinder.findCommonAncestor;
 
 public final class Merger {
 
@@ -19,6 +18,7 @@ public final class Merger {
         ERROR,
         NOTHING_TO_DO
     }
+
     public record MergeResult(MergeResultType type, HashMap<Path, String> newStagedIndex, HashMap<Path, Blob> mergeIndexBlobsToSave, List<Path> conflicts) { }
     public static MergeResult merge(Commit from, Commit into, MinigitObjectLoader objectLoader) throws IOException {
 
@@ -45,11 +45,8 @@ public final class Merger {
         Map<Path, String> baseIndex = baseTree.getIndex(objectLoader);
 
         throw new RuntimeException("Not implemented");
+    }
 
-    }
-    private static Commit findCommonAncestor(Commit from, Commit into, MinigitObjectLoader objectLoader) throws IOException {
-        return null;
-    }
     private static ByteArrayInputStream threeWayMergeArrayStreams(InputStream base, InputStream ours, InputStream theirs) {
         return null;
     }
