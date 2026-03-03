@@ -71,7 +71,15 @@ public final class StatusCommand implements Command {
         int untracked = size(w.get(Repository.FileStatusType.NEW));
 
         IO.println("Status");
+        if (repo.isMerging()) {
+            IO.println(" --- Merging from " + repo.getMergingCommits().fromCommit() + " into " + repo.getMergingCommits().intoHead() + " which is expected to be " + repo.getMergingCommits().intoCommit());
+            IO.println(" --- Next merge-apply will use index to create the merged commit, where the HEAD will move.");
+            IO.println(" --- Use merge-stop to stop the merge.");
+            IO.println(" --- It is not recommended to checkout other branches while merging or to commit - nothing will break, but you might end up doing something you do not want. Also, your HEAD will need to be the same commit as the HEAD during start of merge.");
+            IO.println(" --- Deleting the merge branch will force you to merge-stop.");
+        }
         IO.println("  HEAD: " + (hasHead ? "set" : "no commits yet"));
+
         if (hasHead) {
             if (repo.getHead().type() == Head.Type.BRANCH) {
                 IO.println("  Branch: " + repo.getHead().data());

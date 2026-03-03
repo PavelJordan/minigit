@@ -23,3 +23,6 @@ cz.cuni.mff.jordanpa.minigit.commands.highlevel.ProjectsInitCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.ProjectAddCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.ProjectRemoveCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.ProjectsCommand
+cz.cuni.mff.jordanpa.minigit.commands.highlevel.MergeCommand
+cz.cuni.mff.jordanpa.minigit.commands.highlevel.MergeStopCommand
+cz.cuni.mff.jordanpa.minigit.commands.highlevel.MergeApplyCommand

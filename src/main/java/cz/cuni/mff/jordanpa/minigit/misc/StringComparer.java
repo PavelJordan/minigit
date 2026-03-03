@@ -1,5 +1,7 @@
 package cz.cuni.mff.jordanpa.minigit.misc;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.List;
 
 public final class StringComparer {

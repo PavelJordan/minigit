@@ -47,6 +47,11 @@ public final class CheckoutCommand implements Command {
 
             Repository repo = Repository.load(Path.of(".minigit"));
 
+            if (!repo.workingTreeClean()) {
+                IO.println("Working tree is not clean - cannot checkout.");
+                return 1;
+            }
+
             if (checkoutTo.equals(HEAD)) {
                 checkoutTo = repo.getHeadCommitHash();
                 if (checkoutTo == null) {

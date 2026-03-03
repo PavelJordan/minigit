@@ -29,7 +29,7 @@ public final class CommitCommand implements Command {
 
     @Override
     public String help() {
-        return "Create a commit with the current index. Its parent will be HEAD, which will be updated to point to the new commit.";
+        return "Create a commit with the current index in this repo (or multiple with PM). Its parent will be HEAD, which will be updated to point to the new commit.";
     }
 
     @Override

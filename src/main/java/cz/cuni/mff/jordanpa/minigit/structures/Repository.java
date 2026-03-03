@@ -2,19 +2,26 @@ package cz.cuni.mff.jordanpa.minigit.structures;
 
 import cz.cuni.mff.jordanpa.minigit.misc.Author;
 import cz.cuni.mff.jordanpa.minigit.misc.FileHelper;
+import cz.cuni.mff.jordanpa.minigit.misc.Merger;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-public final class Repository {
+public final class Repository implements MinigitObjectLoader {
 
     public enum FileStatusType {
         SAME,
         MODIFIED,
         DELETED,
         NEW
+    }
+
+    public enum MergeStatus {
+        CONFLICT,
+        MERGED,
+        INVALID
     }
 
     private static final String REF_TYPE_BRANCH = "BRANCH";
@@ -41,6 +48,101 @@ public final class Repository {
     private final Path authorPath; // Not in remote!
     private final Path refPath;
     private final Path ignoredPath;
+    private final Path mergingPath;
+    private MergingCommits mergingCommits = null;
+
+    public boolean isMerging() {
+        return mergingCommits != null;
+    }
+
+    public MergeStatus startMerging(MergingCommits mergingCommits) throws IOException {
+        if (isMerging()) {
+            IO.println("Cannot start merging. There is already a merging in progress. Use stop-merge first, or apply-merge.");
+            return MergeStatus.INVALID;
+        }
+        this.mergingCommits = mergingCommits;
+        MergeStatus status = merge();
+        if (status == MergeStatus.INVALID) {
+            stopMerge();
+        }
+        return status;
+    }
+
+    public boolean mergeFromIndex(String message)  {
+        if (!isMerging()) {
+            IO.println("Cannot merge. There is no merging in progress.");
+            return false;
+        }
+        IO.println("Not implemented yet. Fake merging.");
+        stopMerge();
+        return true;
+
+    }
+
+    public void stopMerge() {
+        this.mergingCommits = null;
+    }
+
+    private MergeStatus merge() throws IOException{
+        IO.println("Will merge from " + mergingCommits.fromCommit());
+        IO.println("To " + mergingCommits.intoHead());
+        MiniGitObject oursObject = loadFromInternal(mergingCommits.intoCommit());
+        MiniGitObject theirsObject = loadFromInternal(mergingCommits.fromCommit());
+        if (!(oursObject instanceof Commit oursCommit) || !(theirsObject instanceof Commit theirsCommit)) {
+            IO.println("Cannot merge. Commits are not of type commit.");
+            return MergeStatus.INVALID;
+        }
+
+        Merger.MergeResult MR = Merger.merge(theirsCommit, oursCommit, this);
+        if (MR == null) {
+            IO.println("Cannot merge. Merging failed.");
+            return MergeStatus.INVALID;
+        }
+        IO.println("Merging successful. But not implemented yet. So conflict you get.");
+        return MergeStatus.CONFLICT;
+    }
+
+    public MergingCommits getMergingCommits() {
+        return mergingCommits;
+    }
+
+    private void loadMerging(){
+        if (!Files.exists(mergingPath)) {
+            return;
+        }
+        try (var in = Files.newBufferedReader(mergingPath)) {
+            String fromCommit = in.readLine();
+            String headType = in.readLine();
+            String headData = in.readLine();
+            String intoCommit = in.readLine();
+            mergingCommits = new MergingCommits(fromCommit, new Head(Head.Type.valueOf(headType), headData), intoCommit);
+        }
+        catch (Exception e) {
+            IO.println("Error loading merging information. Aborting merge");
+            mergingCommits = null;
+        }
+    }
+
+    private void saveMerging() throws IOException {
+        if (mergingCommits == null) {
+            Files.deleteIfExists(mergingPath);
+            return;
+        }
+        if (!Files.exists(mergingPath)) {
+            Files.createDirectories(mergingPath.getParent());
+            Files.createFile(mergingPath);
+        }
+        try (var out = Files.newBufferedWriter(mergingPath)) {
+            out.write(mergingCommits.fromCommit());
+            out.newLine();
+            out.write(mergingCommits.intoHead().type().name());
+            out.newLine();
+            out.write(mergingCommits.intoHead().data());
+            out.newLine();
+            out.write(mergingCommits.intoCommit());
+        }
+    }
+
     private Path mainRepoAbsPath() { return mainRepoPath.toAbsolutePath().normalize(); }
     private Path cwdAbsPath()  { return Path.of("").toAbsolutePath().normalize(); }
     private Path safeAbsFromCwdRelative(Path p) throws IOException {
@@ -80,6 +182,7 @@ public final class Repository {
         this.headPath = path.resolve("HEAD");
         this.authorPath = path.resolve("author");
         this.refPath = path.resolve("refs");
+        this.mergingPath = path.resolve("merging");
         this.ignoredPath = path.resolve("../.minigitignore").normalize();
     }
 
@@ -117,6 +220,7 @@ public final class Repository {
         repo.loadIndex();
         repo.loadCurrentAuthor();
         repo.loadIgnored();
+        repo.loadMerging();
         return repo;
     }
 
@@ -161,6 +265,7 @@ public final class Repository {
         saveHead();
         saveRef();
         saveCurrentAuthor();
+        saveMerging();
     }
 
     public boolean addToIndex(Path file) {
@@ -523,5 +628,12 @@ public final class Repository {
             }
         }
         ignored.add(repoInternalPath.normalize().toString() + "/");
+    }
+
+    public boolean workingTreeClean() throws IOException {
+        List<Repository.FileStatus> statusesWorking = getWorkingToIndexStatus();
+        List<Repository.FileStatus> statusesCommited = getStagedToLastCommitStatus();
+        return statusesWorking.stream().allMatch(status -> status.status() == FileStatusType.SAME || status.status() == FileStatusType.NEW)
+                && statusesCommited.stream().allMatch(status -> status.status() == FileStatusType.SAME);
     }
 }
