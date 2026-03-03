@@ -49,7 +49,7 @@ public final class ShowCommand implements Command {
                 return 1;
             }
             if (parentCommits.length == 0) {
-                repo.showTreeDiff(commitTree);
+                commitTree.showTreeDiff(repo);
                 return 0;
             }
             Commit parent = (Commit) repo.loadFromInternal(commit.getParents()[0]);
@@ -62,7 +62,7 @@ public final class ShowCommand implements Command {
                 IO.println("Base tree is not in repository. That means repo is corrupted.");
                 return 1;
             }
-            repo.showTreeDiff(baseTree, commitTree);
+            baseTree.showTreeDiff(commitTree, repo);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

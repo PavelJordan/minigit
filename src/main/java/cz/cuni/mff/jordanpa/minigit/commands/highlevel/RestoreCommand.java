@@ -34,7 +34,7 @@ public final class RestoreCommand implements Command {
         try {
             List<Repository> repos = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
             for (Repository repo : repos) {
-                IO.println("Restoring " + repo.getRepoDirectory() + " ...");
+                IO.println("Restoring " + repo.getRootPath() + " ...");
                 Map<Path, String> trackedFiles = repo.getTrackedFiles();
                 for (var entry : trackedFiles.entrySet()) {
                     boolean shouldOverwrite = true;
@@ -55,7 +55,7 @@ public final class RestoreCommand implements Command {
                         }
                     }
                 }
-                IO.println("Restored to last saved index state in " + repo.getRepoDirectory());
+                IO.println("Restored to last saved index state in " + repo.getRootPath());
             }
 
         } catch (IOException e) {

@@ -29,7 +29,7 @@ public final class RefsCommand implements Command {
         try {
             List<Repository> repos = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
             for (Repository repo : repos) {
-                IO.println("\nRepository: " + repo.getRepoDirectory());
+                IO.println("\nRepository: " + repo.getRootPath());
                 IO.println("Branches: ");
                 for (var name : repo.getBranches().keySet()) {
                     IO.println(name);

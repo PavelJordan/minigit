@@ -37,7 +37,7 @@ public final class AuthorCommand implements Command {
             for (Repository repo : repos) {
                 repo.setCurrentAuthor(new Author(args[0], args[1]));
                 repo.save();
-                IO.println("Author set in " + repo.getRepoDirectory());
+                IO.println("Author set in " + repo.getRootPath());
             }
         } catch (IOException e) {
             IO.println(e);

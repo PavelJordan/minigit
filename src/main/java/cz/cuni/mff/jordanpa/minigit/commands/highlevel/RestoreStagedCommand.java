@@ -29,10 +29,10 @@ public final class RestoreStagedCommand implements Command {
         try {
             List<Repository> repos = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
             for (Repository repo : repos) {
-                IO.println("Restoring " + repo.getRepoDirectory() + " ...");
+                IO.println("Restoring " + repo.getRootPath() + " ...");
                 repo.unstageToLastCommit();
                 repo.save();
-                IO.println("Everything unstaged in " + repo.getRepoDirectory());
+                IO.println("Everything unstaged in " + repo.getRootPath());
             }
 
         } catch (IOException e) {

@@ -41,7 +41,7 @@ public final class CommitCommand implements Command {
         try {
             List<Repository> repos = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
             for (Repository repo : repos) {
-                IO.println("Committing " + repo.getRepoDirectory() + " ...");
+                IO.println("Committing " + repo.getRootPath() + " ...");
                 Author author = repo.getCurrentAuthor();
                 if (author == null) {
                     IO.println("No author set. Use 'minigit author <name> <email>' to set one.");
@@ -53,7 +53,7 @@ public final class CommitCommand implements Command {
                     continue;
                 }
                 Map<Path, String> trackedFiles = repo.getTrackedFiles();
-                List<Tree> trees = Tree.buildTree(trackedFiles, repo.getRepoDirectory());
+                List<Tree> trees = Tree.buildTree(trackedFiles, repo.getRootPath());
                 Commit commit = getCommit(trees, repo, args[0], author);
                 repo.storeInternally(commit);
                 trees.forEach(repo::storeInternally);
@@ -72,7 +72,7 @@ public final class CommitCommand implements Command {
                     repo.setHeadToCommit(commit);
                 }
                 repo.save();
-                IO.println("Successfully committed " + repo.getRepoDirectory() + ". Commit data is: " + commit.miniGitSha1());
+                IO.println("Successfully committed " + repo.getRootPath() + ". Commit data is: " + commit.miniGitSha1());
             }
         } catch (IOException e) {
             IO.println(e);

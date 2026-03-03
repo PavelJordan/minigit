@@ -33,7 +33,7 @@ public final class TagDeleteCommand implements Command {
         try {
             List<Repository> repos = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
             for (Repository repo : repos) {
-                IO.println("Deleting tag " + args[0] + " in " + repo.getRepoDirectory() + " ...");
+                IO.println("Deleting tag " + args[0] + " in " + repo.getRootPath() + " ...");
                 String tagName = args[0];
                 String tagHash = repo.getTags().get(tagName);
                 if (tagHash == null) {

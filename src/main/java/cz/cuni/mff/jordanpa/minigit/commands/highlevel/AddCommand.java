@@ -34,7 +34,7 @@ public final class AddCommand implements Command {
         try {
             List<Repository> reposHere = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
             for (Repository repo : reposHere) {
-                IO.println("Updating " + repo.getRepoDirectory() + " ...");
+                IO.println("Updating " + repo.getRootPath() + " ...");
                 List<String> toIgnore = repo.getIgnored();
                 for (String pattern : args) {
                     for (Path file: FileHelper.getAllFiles(Path.of(pattern), toIgnore)) {

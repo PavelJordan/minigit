@@ -33,7 +33,7 @@ public final class MergeCommand implements Command {
         }
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
-            if (!repo.workingTreeClean()) {
+            if (repo.workingTreeDirty()) {
                 IO.println("Cannot merge - working tree is not clean.");
                 return 1;
             }

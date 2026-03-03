@@ -2,7 +2,6 @@ package cz.cuni.mff.jordanpa.minigit.commands.highlevel;
 
 import cz.cuni.mff.jordanpa.minigit.commands.Command;
 import cz.cuni.mff.jordanpa.minigit.misc.ProjectManager;
-import cz.cuni.mff.jordanpa.minigit.structures.Head;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 
 import java.io.IOException;
@@ -34,7 +33,7 @@ public final class TagCommand implements Command {
         try {
             List<Repository> repos = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
             for (Repository repo : repos) {
-                IO.println("Creating tag " + args[0] + " in " + repo.getRepoDirectory() + " ...");
+                IO.println("Creating tag " + args[0] + " in " + repo.getRootPath() + " ...");
                 String hashToTag = repo.getHeadCommitHash();
                 if (hashToTag == null) {
                     IO.println("No commits yet.");

@@ -3,6 +3,7 @@ package cz.cuni.mff.jordanpa.minigit.structures;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 
 public record Head(Type type, String data) {
     public enum Type {
@@ -31,6 +32,32 @@ public record Head(Type type, String data) {
             if (data != null) {
                 out.write(data);
             }
+        }
+    }
+
+    public HashMap<Path, String> getCommitIndex(MinigitObjectLoader loader) throws IOException {
+        String hash;
+        if (type() == Head.Type.BRANCH) {
+            hash = loader.getHashFromRef(data());
+        }
+        else if (type() == Head.Type.COMMIT) {
+            hash = data();
+        }
+        else {
+            return new HashMap<>();
+        }
+        MiniGitObject maybeCommit = loader.loadFromInternal(hash);
+        if (maybeCommit instanceof Commit commit) {
+            MiniGitObject maybeTree = loader.loadFromInternal(commit.getTreeHash());
+            if (maybeTree instanceof Tree tree) {
+                return tree.getIndex(loader);
+            }
+            else {
+                throw new IOException("Cannot restore tree. Tree is not in repository.");
+            }
+        }
+        else {
+            throw new IOException("Cannot restore head.");
         }
     }
 }

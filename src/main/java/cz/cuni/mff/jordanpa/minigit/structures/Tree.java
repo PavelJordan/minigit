@@ -3,8 +3,11 @@ package cz.cuni.mff.jordanpa.minigit.structures;
 import cz.cuni.mff.jordanpa.minigit.misc.FileHelper;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+
+import static cz.cuni.mff.jordanpa.minigit.misc.FileHelper.getFileStatusesFromComparison;
 
 /**
  * Folder, as represented in MiniGit. Contains blobs and more trees.
@@ -28,6 +31,14 @@ public final class Tree extends MiniGitObject implements TreeContent {
                 contents.put(name, new TreeEntry(hash, type));
             }
         }
+    }
+
+    private Path safeAbsFromCwdRelative(Path p, MinigitObjectLoader loader) throws IOException {
+        Path abs = Path.of("./").toAbsolutePath().resolve(p).normalize();
+        if (!abs.startsWith(loader.getRootPath().toAbsolutePath().normalize())) {
+            throw new IOException("Path escapes repository: " + p);
+        }
+        return abs;
     }
 
     public enum TreeEntryType { BLOB, TREE }
@@ -134,6 +145,71 @@ public final class Tree extends MiniGitObject implements TreeContent {
             out.write(' ');
             out.write(entry.getKey().getBytes());
             out.write('\n');
+        }
+    }
+
+    public HashMap<Path, String> getIndex(MinigitObjectLoader loader) throws IOException {
+        return new HashMap<>(getIndexOfTreeInternal(this, loader.getRootPath(), loader));
+    }
+
+    private HashMap<Path, String> getIndexOfTreeInternal(Tree tree, Path pathSoFar, MinigitObjectLoader loader) throws IOException {
+        HashMap<Path, String> treeIndex = new HashMap<>();
+        for (Map.Entry<String, Tree.TreeEntry> entry : tree.getContents().entrySet()) {
+            String name = entry.getKey();
+            Tree.TreeEntry value = entry.getValue();
+            if (value.type() == Tree.TreeEntryType.TREE) {
+                MiniGitObject possiblySubtreeToRestore = loader.loadFromInternal(value.hash());
+                if (possiblySubtreeToRestore instanceof Tree subtreeToRestore) {
+                    treeIndex.putAll(getIndexOfTreeInternal(subtreeToRestore, pathSoFar.resolve(name), loader));
+                } else {
+                    IO.println("Object with specified data is not a tree, even though it should. Repository is corrupted.");
+                }
+            } else if (value.type() == Tree.TreeEntryType.BLOB) {
+                Path resolvedPath = FileHelper.getRelativePathToDirectory(pathSoFar.resolve(name), Path.of("./"));
+                treeIndex.put(resolvedPath, value.hash());
+
+            }
+        }
+        return treeIndex;
+    }
+
+    public void showTreeDiff(Tree treeToCompare, MinigitObjectLoader loader) throws IOException{
+        IO.println("The tree " + treeToCompare.miniGitSha1() + " has changed from " + miniGitSha1() + " in the following way:");
+        HashMap<Path, String> baseTreeIndex = getIndex(loader);
+        HashMap<Path, String> treeToCompareIndex = treeToCompare.getIndex(loader);
+        getFileStatusesFromComparison(treeToCompareIndex, baseTreeIndex).forEach(status -> {
+            if (status.status() != Repository.FileStatusType.SAME) {
+                IO.println(status.path() + " (" + status.status() + ")");
+            }
+        });
+    }
+
+    public void showTreeDiff(MinigitObjectLoader loader) throws IOException {
+        IO.println("The tree " + miniGitSha1() + " added:");
+        getIndex(loader).forEach((path, hash) -> {
+            IO.println(path + " (" + hash + ")");
+        });
+    }
+
+    public void forcedCheckoutTree(MinigitObjectLoader loader) throws IOException {
+        for (HashMap.Entry<Path, String> entry : getIndex(loader).entrySet()) {
+            MiniGitObject possibleBlobToRestore = loader.loadFromInternal(entry.getValue());
+            if (possibleBlobToRestore instanceof Blob blobToRestore) {
+                Path absTarget = safeAbsFromCwdRelative(entry.getKey(), loader);
+                if (Files.exists(absTarget)) {
+                    IO.println("File " + absTarget + " already exists. Cannot overwrite!");
+                    return;
+                }
+                IO.println("Restoring file " + absTarget + "...");
+                try {
+                    blobToRestore.writeContentsTo(absTarget);
+                } catch (IOException e) {
+                    IO.println(e);
+                }
+            }
+            else {
+                IO.println("Object with specified data is not a blob, even though it should. Repository is corrupted.");
+            }
         }
     }
 }

@@ -34,7 +34,7 @@ public final class AddIgnoredCommand implements Command {
         try {
             List<Repository> repos = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
             for (Repository repo : repos) {
-                IO.println("Updating " + repo.getRepoDirectory() + " ...");
+                IO.println("Updating " + repo.getRootPath() + " ...");
                 List<String> ignored = repo.getIgnored();
                 for (String pattern : args) {
                     for (Path file: FileHelper.getAllFiles(Path.of(pattern), List.of())) {

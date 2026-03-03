@@ -1,9 +1,12 @@
 package cz.cuni.mff.jordanpa.minigit.misc;
 
+import cz.cuni.mff.jordanpa.minigit.structures.Repository;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public final class FileHelper {
@@ -47,5 +50,28 @@ public final class FileHelper {
 
     public static boolean isExcluded(Path path, List<String> toExclude) {
         return toExclude.stream().anyMatch(ex -> path.toString().startsWith(ex) || path.toString().endsWith(ex));
+    }
+
+    public static List<Repository.FileStatus> getFileStatusesFromComparison(HashMap<Path, String> currentIndex, HashMap<Path, String> indexToCompare) {
+        List<Repository.FileStatus> statuses = new ArrayList<>();
+        for (Path path : currentIndex.keySet()) {
+            String workingDirectoryHash = currentIndex.get(path);
+            Repository.FileStatusType againstCommit;
+            if (indexToCompare.containsKey(path)) {
+                if (indexToCompare.get(path).equals(workingDirectoryHash)) {
+                    againstCommit = Repository.FileStatusType.SAME;
+                }
+                else {
+                    againstCommit = Repository.FileStatusType.MODIFIED;
+                }
+            }
+            else {
+                againstCommit = Repository.FileStatusType.NEW;
+            }
+            statuses.add(new Repository.FileStatus(path, againstCommit));
+        }
+        var deletedAgainstStaged = indexToCompare.keySet().stream().filter(path -> !currentIndex.containsKey(path));
+        deletedAgainstStaged.forEach(path -> statuses.add(new Repository.FileStatus(path, Repository.FileStatusType.DELETED)));
+        return statuses;
     }
 }
