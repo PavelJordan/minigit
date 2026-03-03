@@ -58,8 +58,11 @@ public final class MergeCommand implements Command {
                 repo.save();
                 return 2;
             }
-            else if (mergeStatus == Repository.MergeStatus.MERGED) {
-                IO.println("Merge successful. Use merge-apply with message to apply the merge, stage changes before applying to change the merge, or merge-stop to stop merging.");
+            else if (mergeStatus == Repository.MergeStatus.APPLIED) {
+                IO.println("Merge successful.");
+                if (repo.isMerging()){
+                    IO.println(" Use merge-apply with message to apply the merge, stage changes before applying to change the merge, or merge-stop to stop merging.");
+                }
                 repo.save();
                 return 0;
             }

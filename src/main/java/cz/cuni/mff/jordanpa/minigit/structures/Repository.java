@@ -22,8 +22,8 @@ public final class Repository implements MinigitObjectLoader {
 
     public enum MergeStatus {
         CONFLICT,
-        MERGED,
-        INVALID
+        APPLIED,
+        INVALID,
     }
 
     private static final String REF_TYPE_BRANCH = "BRANCH";
@@ -63,11 +63,7 @@ public final class Repository implements MinigitObjectLoader {
             return MergeStatus.INVALID;
         }
         this.mergingCommits = mergingCommits;
-        MergeStatus status = merge();
-        if (status == MergeStatus.INVALID) {
-            stopMerge();
-        }
-        return status;
+        return merge();
     }
 
     public boolean mergeFromIndex(String message)  {
@@ -92,13 +88,53 @@ public final class Repository implements MinigitObjectLoader {
         MiniGitObject theirsObject = loadFromInternal(mergingCommits.fromCommit());
         if (!(oursObject instanceof Commit oursCommit) || !(theirsObject instanceof Commit theirsCommit)) {
             IO.println("Cannot merge. Commits are not of type commit.");
+            stopMerge();
             return MergeStatus.INVALID;
         }
 
         Merger.MergeResult MR = Merger.merge(theirsCommit, oursCommit, this);
-        if (MR == null) {
-            IO.println("Cannot merge. Merging failed.");
-            return MergeStatus.INVALID;
+        switch (MR.type()) {
+            case ERROR -> {
+                IO.println("Cannot merge. Merging failed.");
+                stopMerge();
+                return MergeStatus.INVALID;
+            }
+            case NOTHING_TO_DO -> {
+                IO.println("Nothing to merge. Commits are identical.");
+                stopMerge();
+                return MergeStatus.APPLIED;
+            }
+            case FAST_FORWARD -> {
+                IO.println("Fast-forward merge.");
+                Head mergeHead = mergingCommits.intoHead();
+                if (mergeHead.type() == Head.Type.BRANCH) {
+                    setBranch(mergeHead.data(), theirsCommit.miniGitSha1());
+                }
+                else if (mergeHead.type() == Head.Type.COMMIT) {
+                    setHeadToCommit(theirsCommit);
+                }
+                else {
+                    throw new UnsupportedOperationException("Invalid head type while merging: " + mergeHead.type());
+                }
+                stopMerge();
+                return MergeStatus.APPLIED;
+            }
+            case MERGED -> {
+                IO.println("Merged successfully.");
+                stagedIndex = MR.newStagedIndex();
+                MR.mergeIndexBlobsToSave().values().forEach(this::storeInternally);
+                if (MR.conflicts().isEmpty()) {
+                    return MergeStatus.APPLIED;
+                }
+                else {
+                    IO.println("Conflicts detected. MiniGit asks you to resolve them:");
+                    for (var conflict : MR.conflicts()) {
+                        IO.println(conflict.toString());
+                    }
+                    IO.println("Resolve conflicts, stage them and then type 'merge-apply' to apply the merge.");
+                    return MergeStatus.CONFLICT;
+                }
+            }
         }
         IO.println("Merging successful. But not implemented yet. So conflict you get.");
         return MergeStatus.CONFLICT;
@@ -495,6 +531,9 @@ public final class Repository implements MinigitObjectLoader {
     }
 
     public void setBranch(String arg, String hash){
+        if (branches.containsKey(arg)) {
+            IO.println("Branch " + arg + " moved from: " + branches.get(arg) + " to " + hash);
+        }
         branches.put(arg, hash);
     }
 

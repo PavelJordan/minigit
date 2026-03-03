@@ -37,7 +37,7 @@ public final class BranchCommand implements Command {
                 repo.setBranch(branchName, head.data());
             }
             else if (head.type() == Head.Type.BRANCH) {
-                throw new UnsupportedOperationException("Not implemented yet.");
+                repo.setBranch(branchName, repo.getHeadCommitHash());
             }
             else {
                 IO.println("Cannot create branch. There is no HEAD yet.");
