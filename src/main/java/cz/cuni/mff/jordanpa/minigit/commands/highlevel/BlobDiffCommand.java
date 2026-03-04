@@ -46,11 +46,11 @@ public final class BlobDiffCommand implements Command {
             for (MiniGitDiff.DiffResult diffResult : result) {
                 IO.println("Change from line " + (diffResult.replaceFrom() + 1));
                 IO.println("<<<<<<<<<<<< FROM");
-                for (int i = diffResult.replaceFrom(); i < diffResult.replaceTo(); i++) {
+                for (int i = (int) diffResult.replaceFrom(); i < diffResult.replaceTo(); i++) {
                     IO.println(lines1.get(i));
                 }
                 IO.println("============");
-                for (int i = diffResult.replaceWithFrom(); i < diffResult.replaceWithTo(); i++) {
+                for (int i = (int) diffResult.replaceWithFrom(); i < diffResult.replaceWithTo(); i++) {
                     IO.println(lines2.get(i));
                 }
                 IO.println(">>>>>>>>>>>> TO");
