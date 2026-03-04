@@ -27,6 +27,10 @@ public final class RestoreStagedCommand implements Command {
     @Override
     public int execute(String[] args) {
         try {
+            if (args.length != 0) {
+                IO.println("Incorrect number of arguments. Provide no arguments.");
+                return 1;
+            }
             List<Repository> repos = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
             for (Repository repo : repos) {
                 IO.println("Restoring " + repo.getRootPath() + " ...");

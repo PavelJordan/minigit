@@ -26,3 +26,4 @@ cz.cuni.mff.jordanpa.minigit.commands.highlevel.ProjectsCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.MergeCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.MergeStopCommand
 cz.cuni.mff.jordanpa.minigit.commands.highlevel.MergeApplyCommand
+cz.cuni.mff.jordanpa.minigit.commands.highlevel.BlobDiffCommand

@@ -1,13 +1,8 @@
 package cz.cuni.mff.jordanpa.minigit.structures;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 
 /**
@@ -63,6 +58,10 @@ public final class Blob extends MiniGitObject implements TreeContent {
         try (BufferedOutputStream out = new BufferedOutputStream(Files.newOutputStream(path))) {
             out.write(content);
         }
+    }
+
+    public BufferedReader getContentReader() {
+        return new BufferedReader(new InputStreamReader(new ByteArrayInputStream(content)));
     }
 
     private void writeToStream(OutputStream out) throws IOException {
