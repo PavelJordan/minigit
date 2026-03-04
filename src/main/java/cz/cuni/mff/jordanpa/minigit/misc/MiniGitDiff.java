@@ -5,13 +5,14 @@ import cz.cuni.mff.jordanpa.minigit.structures.Blob;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
 public final class MiniGitDiff {
-    public record DiffResult(Integer replaceFrom, Integer replaceTo, Integer replaceWithFrom, Integer replaceWithTo) {}
+    public record DiffResult(long replaceFrom, long replaceTo, long replaceWithFrom, long replaceWithTo) {}
     private record LineIndices(List<Integer> lines) {}
-    private record KCandidate(int i, int j) {}
+    private record KCandidate(long i, long j) {}
     private static final class KVector {
         // indexed by k
         private final List<KCandidate> kVector = new ArrayList<>();
@@ -26,7 +27,7 @@ public final class MiniGitDiff {
             if (k < kVector.size()) {
                 return kVector.get(k);
             }
-            return new KCandidate(Integer.MAX_VALUE, Integer.MAX_VALUE);
+            return new KCandidate(Long.MAX_VALUE, Long.MAX_VALUE);
         }
 
         public void tryInsertCandidate(KCandidate candidate) {
@@ -53,8 +54,8 @@ public final class MiniGitDiff {
             for (KCandidate bestPath = getBest(kVector.size() - 1); bestPath != null; bestPath = backTrack.get(bestPath)) {
                 result.add(bestPath);
             }
-            result.removeLast();
-            return result.reversed();
+            Collections.reverse(result);
+            return result;
         }
     }
 
@@ -68,6 +69,13 @@ public final class MiniGitDiff {
             }
         }
         List<KCandidate> track = kVec.getTrack();
+        long fromLen, toLen;
+        try (BufferedReader fromStream = from.getContentReader();BufferedReader toStream = to.getContentReader()) {
+            fromLen = fromStream.lines().count();
+            toLen = toStream.lines().count();
+        }
+
+        track.add(new KCandidate(fromLen, toLen));
         List<DiffResult> results = new ArrayList<>();
         KCandidate previous = track.removeFirst();
         for (KCandidate kCandidate : track) {
@@ -75,10 +83,10 @@ public final class MiniGitDiff {
                 previous = kCandidate;
                 continue;
             }
-            int replaceBegin = previous.i() + 1;
-            int replaceEnd = kCandidate.i();
-            int replaceWithBegin = previous.j() + 1;
-            int replaceWithEnd = kCandidate.j();
+            long replaceBegin = previous.i() + 1;
+            long replaceEnd = kCandidate.i();
+            long replaceWithBegin = previous.j() + 1;
+            long replaceWithEnd = kCandidate.j();
             results.add(new DiffResult(replaceBegin, replaceEnd, replaceWithBegin, replaceWithEnd));
             previous = kCandidate;
         }

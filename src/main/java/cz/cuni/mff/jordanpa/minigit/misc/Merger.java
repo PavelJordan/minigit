@@ -2,6 +2,7 @@ package cz.cuni.mff.jordanpa.minigit.misc;
 
 import cz.cuni.mff.jordanpa.minigit.structures.*;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
@@ -9,6 +10,8 @@ import java.util.*;
 import static cz.cuni.mff.jordanpa.minigit.misc.CommonAncestorFinder.findCommonAncestor;
 
 public final class Merger {
+
+    private record ThreeWayMergeResult(Blob blob, boolean hasConflicts) { }
 
     public enum MergeResultType {
         MERGED,
@@ -52,20 +55,27 @@ public final class Merger {
 
         for (Path path : allPaths) {
             String baseHash = baseIndex.get(path);
-            String fromHash = baseIndex.get(path);
-            String toHash = baseIndex.get(path);
+            String fromHash = fromIndex.get(path);
+            String toHash = intoIndex.get(path);
 
             // NO CONFLICT SCENARIOS
-
-            // Deleted in both
-            if (baseHash != null && fromHash == null && toHash == null) {
+            // No change in both
+            if (Objects.equals(baseHash, fromHash) && Objects.equals(baseHash, toHash)) {
+                newStagedIndex.put(path, baseHash);
+                continue;
+            }
+            // Same change in both (or deleted in both)
+            if (Objects.equals(fromHash, toHash) && baseHash != null) {
+                if (fromHash != null) {
+                    newStagedIndex.put(path, fromHash);
+                }
                 continue;
             }
             // Deleted in one, no change in the other
-            if (fromHash == null && toHash.equals(baseHash)) {
+            if (fromHash == null && Objects.equals(toHash, baseHash)) {
                 continue;
             }
-            if (toHash == null && fromHash.equals(baseHash)) {
+            if (toHash == null && Objects.equals(fromHash, baseHash)) {
                 continue;
             }
             // Added in one, not in the other
@@ -78,21 +88,20 @@ public final class Merger {
                 continue;
             }
             // Added the same in both
-            if (baseHash == null && fromHash.equals(toHash)) {
+            if (baseHash == null && Objects.equals(fromHash, toHash)) {
                 newStagedIndex.put(path, fromHash);
                 continue;
             }
             // Modified in one, not in the other
-            if (fromHash != null && fromHash.equals(baseHash) && !toHash.equals(baseHash)) {
+            if (fromHash != null && Objects.equals(fromHash, baseHash) && !Objects.equals(toHash, baseHash)) {
                 newStagedIndex.put(path, toHash);
                 continue;
             }
-            if (toHash != null && toHash.equals(baseHash) && !fromHash.equals(baseHash)) {
+            if (toHash != null && Objects.equals(toHash, baseHash) && !Objects.equals(fromHash, baseHash)) {
                 newStagedIndex.put(path, fromHash);
                 continue;
             }
             // CONFLICT SCENARIOS
-
             // Deleted in one, modified in the other -> unstaged modification
             if (fromHash != null && toHash == null) {
                 newStagedIndex.put(path, baseHash);
@@ -103,7 +112,7 @@ public final class Merger {
             if (fromHash == null) {
                 newStagedIndex.put(path, baseHash);
                 saveBlob(objectLoader, toHash, path);
-                conflicts.add(new Conflict(path, "Conflict: " + path + " was added in one commit, deleted in the other."));
+                conflicts.add(new Conflict(path, "Conflict: " + path + " was deleted in one commit, modified in the other."));
                 continue;
             }
             // Added in both, but different -> stage from, unstage to
@@ -114,17 +123,36 @@ public final class Merger {
                 continue;
             }
             // Both modified -> three-way merge
-            newStagedIndex.put(path, baseHash);
-            conflicts.add(new Conflict(path, "Conflict: " + path + " was modified in both commits. Resolve by modifying the file and staging it. Then do merge-apply."));
-            mergeIndexBlobsToSave.put(path, threeWayMerge(baseHash, toHash, fromHash, objectLoader));
-
+            newStagedIndex.put(path, toHash);
+            ThreeWayMergeResult result = threeWayMerge(baseHash, toHash, fromHash, objectLoader);
+            result.blob.writeContentsTo(path);
+            if (result.hasConflicts) {
+                conflicts.add(new Conflict(path, "Conflict: " + path + " was modified in both commits. Resolve by modifying the file and staging it. Then do merge-apply."));
+                newStagedIndex.put(path, baseHash);
+            }
+            else {
+                mergeIndexBlobsToSave.put(path, result.blob);
+                newStagedIndex.put(path, result.blob.miniGitSha1());
+            }
         }
 
-        return new MergeResult(MergeResultType.MERGED, newStagedIndex, new HashMap<>(), conflicts);
+        return new MergeResult(MergeResultType.MERGED, newStagedIndex, mergeIndexBlobsToSave, conflicts);
     }
 
-    private static Blob threeWayMerge(String baseHash, String oursHash, String theirsHash, MinigitObjectLoader loader) throws IOException {
-        throw new RuntimeException("Not implemented yet.");
+    private static ThreeWayMergeResult threeWayMerge(String baseHash, String oursHash, String theirsHash, MinigitObjectLoader loader) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        MiniGitObject baseBlobObj = loader.loadFromInternal(baseHash);
+        MiniGitObject oursBlobObj = loader.loadFromInternal(oursHash);
+        MiniGitObject theirsBlobObj = loader.loadFromInternal(theirsHash);
+        if (!(baseBlobObj instanceof Blob baseBlob && oursBlobObj instanceof Blob oursBlob && theirsBlobObj instanceof Blob theirsBlob)) {
+            throw new IOException("Cannot merge. Blobs are not of type blob.");
+        }
+        List<MiniGitDiff.DiffResult> baseOursDiff = MiniGitDiff.diff(baseBlob, oursBlob);
+        List<MiniGitDiff.DiffResult> baseTheirsDiff = MiniGitDiff.diff(baseBlob, theirsBlob);
+
+        // TODO
+
+        return new ThreeWayMergeResult(new Blob(out.toByteArray()), false);
     }
 
     private static void saveBlob(MinigitObjectLoader loader, String blobHash, Path path) throws IOException {
