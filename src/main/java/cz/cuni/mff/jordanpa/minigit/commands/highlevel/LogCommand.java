@@ -78,7 +78,7 @@ public final class LogCommand implements Command {
             Set<String> visited,
             String indent
     ) throws IOException {
-        // ChatGPT has coded this method - I was too tried...
+        // ChatGPT has coded this method - it is simple DFS
         if (commitHash == null || visited.contains(commitHash)) {
             return true;
         }

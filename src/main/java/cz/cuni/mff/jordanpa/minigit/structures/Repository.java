@@ -148,12 +148,10 @@ public final class Repository implements MinigitObjectLoader {
                     for (var conflict : MR.conflicts()) {
                         IO.println(conflict.toString());
                     }
-                    IO.println("Resolve conflicts, stage them and then type 'merge-apply' to apply the merge.");
                     return MergeStatus.CONFLICT;
                 }
             }
         }
-        IO.println("Merging successful. But not implemented yet. So conflict you get.");
         return MergeStatus.CONFLICT;
     }
 

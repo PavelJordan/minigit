@@ -4,7 +4,8 @@ import java.util.*;
 
 /**
  * Static class that loads all plugins implementing Command from the "commands" package.
- * I used ChatGPT to help me set up the service loader.
+ * I used ChatGPT to help me set up the service loader. Later in the summer semester, I learned how to use it,
+ * so now I wouldn't need him to help me with this.
  */
 public final class PluginLoader {
     private static Map<String, Command> commands;

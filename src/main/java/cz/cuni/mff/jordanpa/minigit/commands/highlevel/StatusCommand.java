@@ -55,6 +55,7 @@ public final class StatusCommand implements Command {
         List<Repository.FileStatus> indexToHead = repo.getStagedToLastCommitStatus();
 
         // All code below is ChatGPT coded - I just provided the data with the format I came up with.
+        // This is because I wanted the status to be pretty and my statuses were always ugly :(
 
         boolean hasHead = repo.getHead().type() != Head.Type.UNSET;
 
@@ -73,7 +74,7 @@ public final class StatusCommand implements Command {
         IO.println("Status");
         if (repo.isMerging()) {
             IO.println(" --- Merging from " + repo.getMergingCommits().fromCommit() + " into " + repo.getMergingCommits().intoHead() + " which is expected to be " + repo.getMergingCommits().intoCommit());
-            IO.println(" --- Next merge-apply will use index to create the merged commit, where the HEAD will move.");
+            IO.println(" --- merge-apply to merge what is staged.");
             IO.println(" --- Use merge-stop to stop the merge.");
             IO.println(" --- It is not recommended to checkout other branches while merging or to commit - nothing will break, but you might end up doing something you do not want. Also, your HEAD will need to be the same commit as the HEAD during start of merge.");
             IO.println(" --- Deleting the merge branch will force you to merge-stop.");
