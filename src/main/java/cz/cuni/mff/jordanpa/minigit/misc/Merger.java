@@ -4,6 +4,7 @@ import cz.cuni.mff.jordanpa.minigit.structures.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -14,7 +15,7 @@ public final class Merger {
     private record ThreeWayMergeResult(Blob blob, boolean hasConflicts) { }
 
     public enum MergeResultType {
-        MERGED,
+        MERGED_INTO_FS,
         FAST_FORWARD,
         ERROR,
         NOTHING_TO_DO
@@ -68,37 +69,45 @@ public final class Merger {
             if (Objects.equals(fromHash, toHash) && baseHash != null) {
                 if (fromHash != null) {
                     newStagedIndex.put(path, fromHash);
+                    saveBlob(objectLoader, fromHash, path);
                 }
                 continue;
             }
             // Deleted in one, no change in the other
             if (fromHash == null && Objects.equals(toHash, baseHash)) {
+                Files.deleteIfExists(path);
                 continue;
             }
             if (toHash == null && Objects.equals(fromHash, baseHash)) {
+                Files.deleteIfExists(path);
                 continue;
             }
             // Added in one, not in the other
             if (baseHash == null && fromHash == null) {
                 newStagedIndex.put(path, toHash);
+                saveBlob(objectLoader, toHash, path);
                 continue;
             }
             if (baseHash == null && toHash == null) {
                 newStagedIndex.put(path, fromHash);
+                saveBlob(objectLoader, fromHash, path);
                 continue;
             }
             // Added the same in both
             if (baseHash == null && Objects.equals(fromHash, toHash)) {
                 newStagedIndex.put(path, fromHash);
+                saveBlob(objectLoader, fromHash, path);
                 continue;
             }
             // Modified in one, not in the other
             if (fromHash != null && Objects.equals(fromHash, baseHash) && !Objects.equals(toHash, baseHash)) {
                 newStagedIndex.put(path, toHash);
+                saveBlob(objectLoader, toHash, path);
                 continue;
             }
             if (toHash != null && Objects.equals(toHash, baseHash) && !Objects.equals(fromHash, baseHash)) {
                 newStagedIndex.put(path, fromHash);
+                saveBlob(objectLoader, fromHash, path);
                 continue;
             }
             // CONFLICT SCENARIOS
@@ -136,7 +145,7 @@ public final class Merger {
             }
         }
 
-        return new MergeResult(MergeResultType.MERGED, newStagedIndex, mergeIndexBlobsToSave, conflicts);
+        return new MergeResult(MergeResultType.MERGED_INTO_FS, newStagedIndex, mergeIndexBlobsToSave, conflicts);
     }
 
     private static ThreeWayMergeResult threeWayMerge(String baseHash, String oursHash, String theirsHash, MinigitObjectLoader loader) throws IOException {

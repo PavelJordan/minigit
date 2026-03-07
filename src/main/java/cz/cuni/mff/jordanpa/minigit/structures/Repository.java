@@ -7,6 +7,7 @@ import cz.cuni.mff.jordanpa.minigit.misc.Merger;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.*;
 
 import static cz.cuni.mff.jordanpa.minigit.misc.FileHelper.getFileStatusesFromComparison;
@@ -66,15 +67,38 @@ public final class Repository implements MinigitObjectLoader {
         return merge();
     }
 
-    public boolean mergeFromIndex(String message)  {
+    public boolean mergeFromIndex(String message) throws IOException {
         if (!isMerging()) {
             IO.println("Cannot merge. There is no merging in progress.");
             return false;
         }
-        IO.println("Not implemented yet. Fake merging.");
+        MergingCommits merging = mergingCommits;
+        String intoCommitHash = merging.intoCommit();
+        String fromCommitHash = merging.fromCommit();
+        Head intoHead = merging.intoHead();
+        if (!loadFromInternal(intoHead.data()).miniGitSha1().equals(intoCommitHash)) {
+            IO.println("Warning: merging into a commit that is not the current head. This is not recommended.");
+        }
+        List<Tree> newTrees = Tree.buildTree(stagedIndex, mainRepoPath);
+        Commit result = new Commit(newTrees.getLast().miniGitSha1(), intoCommitHash, fromCommitHash, getCurrentAuthor(), message, Date.from(Instant.now()));
+        updateHeadToCommit(intoHead, result);
+        newTrees.forEach(this::storeInternally);
+        storeInternally(result);
         stopMerge();
         return true;
+    }
 
+    private void updateHeadToCommit(Head intoHead, Commit result) {
+        if (intoHead.type() == Head.Type.BRANCH) {
+            setBranch(intoHead.data(), result.miniGitSha1());
+            setHeadToBranch(intoHead.data());
+        }
+        else if (intoHead.type() == Head.Type.COMMIT) {
+            setHeadToCommit(result);
+        }
+        else {
+            throw new UnsupportedOperationException("Invalid head type while moving head: " + intoHead.type());
+        }
     }
 
     public void stopMerge() {
@@ -107,20 +131,13 @@ public final class Repository implements MinigitObjectLoader {
             case FAST_FORWARD -> {
                 IO.println("Fast-forward merge.");
                 Head mergeHead = mergingCommits.intoHead();
-                if (mergeHead.type() == Head.Type.BRANCH) {
-                    setBranch(mergeHead.data(), theirsCommit.miniGitSha1());
-                }
-                else if (mergeHead.type() == Head.Type.COMMIT) {
-                    setHeadToCommit(theirsCommit);
-                }
-                else {
-                    throw new UnsupportedOperationException("Invalid head type while merging: " + mergeHead.type());
-                }
+                checkoutTree((Tree)loadFromInternal(theirsCommit.getTreeHash()));
+                updateHeadToCommit(mergeHead, theirsCommit);
                 stopMerge();
                 return MergeStatus.APPLIED;
             }
-            case MERGED -> {
-                IO.println("Merged successfully.");
+            case MERGED_INTO_FS -> {
+                IO.println("Regular merge.");
                 stagedIndex = MR.newStagedIndex();
                 MR.mergeIndexBlobsToSave().values().forEach(this::storeInternally);
                 if (MR.conflicts().isEmpty()) {

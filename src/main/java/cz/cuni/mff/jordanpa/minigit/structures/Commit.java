@@ -46,6 +46,22 @@ public final class Commit extends MiniGitObject {
         this.date = date;
     }
 
+    /**
+     * Creates a new commit formed by merge.
+     * @param snapshot the data of the tree object this commit refers to.
+     * @param parentInto the data of the parent commit the merge is into.
+     * @param parentFrom the data of the parent commit the merge is from.
+     * @param author the author of this commit
+     * @param message the commit message
+     */
+    public Commit(String snapshot, String parentInto, String parentFrom, Author author, String message, Date date) {
+        this.Snapshot = snapshot;
+        this.parents = new String[]{parentInto, parentFrom};
+        this.message = message;
+        this.author = author;
+        this.date = date;
+    }
+
     public String [] getParents() {
         return Arrays.copyOf(parents, parents.length);
     }
@@ -83,11 +99,11 @@ public final class Commit extends MiniGitObject {
 
     @Override
     public String getDescription() {
-        return getAnnotatedDescription(Collections.emptyMap(), Collections.emptyMap(), null);
+        return getAnnotatedDescription(Collections.emptyMap(), Collections.emptyMap(), null, "");
     }
 
-    public String getAnnotatedDescription(Map<String, String> branchNameToHash, Map<String, String> tagNameToHash, Head head) {
-        String hashStr = "Commit Hash: " + miniGitSha1();
+    public String getAnnotatedDescription(Map<String, String> branchNameToHash, Map<String, String> tagNameToHash, Head head, String indent) {
+        String hashStr = indent + "Commit Hash: " + miniGitSha1();
         StringBuilder hashStrEnd = new StringBuilder();
         if (head != null && head.type() == Head.Type.COMMIT && head.data().equals(miniGitSha1())) {
             hashStrEnd.append(" (DETACHED HEAD)");
@@ -106,10 +122,14 @@ public final class Commit extends MiniGitObject {
                 hashStrEnd.append(" (tag [").append(entry.getKey()).append("])");
             }
         }
-        String treeHashStr = "Tree data : " + Snapshot + "\n";
-        String authorStr = "Author: " + author.name() + ", " + author.email() + "\n";
-        String dateStr = "Date: " + date.toString() + "\n";
-        String messageStr = "Message: \n[\n" + message + "\n]\n";
+        StringBuilder indentedMessage = new StringBuilder();
+        for (String line : message.split("\n")) {
+            indentedMessage.append(indent).append(line).append("\n");
+        }
+        String treeHashStr = indent + "Tree data : " + Snapshot + "\n";
+        String authorStr = indent + "Author: " + author.name() + ", " + author.email() + "\n";
+        String dateStr = indent + "Date: " + date.toString() + "\n";
+        String messageStr = indent + "Message: \n" + indent + "[\n" + indentedMessage.toString() + indent + "]\n";
         return hashStr + hashStrEnd.append("\n") + treeHashStr + authorStr + dateStr + messageStr;
     }
 
