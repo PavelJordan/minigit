@@ -3,6 +3,7 @@ package cz.cuni.mff.jordanpa.minigit.structures;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 
 /**
@@ -60,12 +61,20 @@ public final class Blob extends MiniGitObject implements TreeContent {
         }
     }
 
-    public BufferedReader getContentReader() {
-        return new BufferedReader(new InputStreamReader(new ByteArrayInputStream(content)));
+    public BufferedInputStream getContentReader() {
+        return new BufferedInputStream(new ByteArrayInputStream(content));
     }
 
     private void writeToStream(OutputStream out) throws IOException {
         out.write(BLOB_HEADER);
         out.write(content);
+    }
+
+    public List<String> readAllLines() throws IOException {
+        List<String> lines;
+        try (BufferedInputStream reader = getContentReader()) {
+            lines = new String(reader.readAllBytes()).lines().toList();
+        }
+        return lines;
     }
 }

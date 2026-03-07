@@ -2,7 +2,6 @@ package cz.cuni.mff.jordanpa.minigit.misc;
 
 import cz.cuni.mff.jordanpa.minigit.structures.Blob;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,10 +69,8 @@ public final class MiniGitDiff {
         }
         List<KCandidate> track = kVec.getTrack();
         long fromLen, toLen;
-        try (BufferedReader fromStream = from.getContentReader();BufferedReader toStream = to.getContentReader()) {
-            fromLen = fromStream.lines().count();
-            toLen = toStream.lines().count();
-        }
+        fromLen = from.readAllLines().size();
+        toLen = to.readAllLines().size();
 
         track.add(new KCandidate(fromLen, toLen));
         List<DiffResult> results = new ArrayList<>();
@@ -93,35 +90,28 @@ public final class MiniGitDiff {
         return results;
     }
 
-    private static HashMap<String, LineIndices> getEquivalenceClasses(BufferedReader fileStream) throws IOException {
+    private static HashMap<String, LineIndices> getEquivalenceClasses(List<String> lines) throws IOException {
         HashMap<String, LineIndices> equivalenceClasses = new HashMap<>();
-        String line;
-        int lineIndex = 0;
-        while((line = fileStream.readLine()) != null) {
+        for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
+            String line = lines.get(lineIndex);
             if (!equivalenceClasses.containsKey(line)) {
                 equivalenceClasses.put(line, new LineIndices(new ArrayList<>()));
             }
             equivalenceClasses.get(line).lines().add(lineIndex);
-            lineIndex++;
         }
         return equivalenceClasses;
     }
 
     private static List<LineIndices> getMatchingLines(Blob baseFile, Blob findMatchingLinesIn) throws IOException {
         HashMap<String, LineIndices> equivalenceClasses;
-        try (BufferedReader findMatchingLinesInStream = findMatchingLinesIn.getContentReader()) {
-            equivalenceClasses = getEquivalenceClasses(findMatchingLinesInStream);
-        }
+        equivalenceClasses = getEquivalenceClasses(findMatchingLinesIn.readAllLines());
         List<LineIndices> matchingLines = new ArrayList<>();
-        try(BufferedReader baseFileStream = baseFile.getContentReader()) {
-            String line;
-            while((line = baseFileStream.readLine()) != null) {
-                if (equivalenceClasses.containsKey(line)) {
-                    matchingLines.add(equivalenceClasses.get(line));
-                }
-                else {
-                    matchingLines.add(new LineIndices(List.of()));
-                }
+        for (String line : baseFile.readAllLines()) {
+            if (equivalenceClasses.containsKey(line)) {
+                matchingLines.add(equivalenceClasses.get(line));
+            }
+            else {
+                matchingLines.add(new LineIndices(List.of()));
             }
         }
         return matchingLines;

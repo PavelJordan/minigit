@@ -31,7 +31,7 @@ public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob,
             return new Blob(contentsBuff.toByteArray());
         }
         if (Arrays.equals(header, TREE_HEADER)) {
-            return new Tree(contentsBuff.toByteArray());
+            return new Tree(contentsBuff.toByteArray(), false);
         }
         if  (Arrays.equals(header, COMMIT_HEADER)) {
             return new Commit(contentsBuff.toByteArray());

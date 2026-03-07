@@ -17,7 +17,10 @@ public final class Tree extends MiniGitObject implements TreeContent {
     /**
      * Build a tree from its contents in a byte array
      */
-    Tree(byte[] byteArray) {
+    Tree(byte[] byteArray, boolean isWithHeader) {
+        if (isWithHeader) {
+            byteArray = Arrays.copyOfRange(byteArray, HEADER_SIZES, byteArray.length);
+        }
         try(Scanner scanner = new Scanner(new ByteArrayInputStream(byteArray))) {
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();

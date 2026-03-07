@@ -2,6 +2,7 @@ package cz.cuni.mff.jordanpa.minigit.misc;
 
 import cz.cuni.mff.jordanpa.minigit.structures.*;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -186,9 +187,9 @@ public final class Merger {
         List<MiniGitDiff.DiffResult> baseOursDiff = MiniGitDiff.diff(baseBlob, oursBlob);
         List<MiniGitDiff.DiffResult> baseTheirsDiff = MiniGitDiff.diff(baseBlob, theirsBlob);
 
-        List<String> baseLines = readLines(baseBlob);
-        List<String> oursLines = readLines(oursBlob);
-        List<String> theirsLines = readLines(theirsBlob);
+        List<String> baseLines = baseBlob.readAllLines();
+        List<String> oursLines = oursBlob.readAllLines();
+        List<String> theirsLines = theirsBlob.readAllLines();
 
         List<String> mergedLines = new ArrayList<>();
         boolean hasConflicts = false;
@@ -247,17 +248,6 @@ public final class Merger {
         }
 
         return new ThreeWayMergeResult(new Blob(out.toByteArray()), hasConflicts);
-    }
-
-    private static List<String> readLines(Blob blob) throws IOException {
-        List<String> lines = new ArrayList<>();
-        try (BufferedReader reader = blob.getContentReader()) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
-            }
-        }
-        return lines;
     }
 
     private static int nextDiffStart(List<MiniGitDiff.DiffResult> diffs, int index) {

@@ -46,6 +46,14 @@ public final class Commit extends MiniGitObject {
         this.date = date;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Commit c) {
+            return c.Snapshot == Snapshot && Arrays.equals(c.parents, parents) && c.message.equals(message) && c.author.equals(author) && c.date.equals(date) && c.miniGitSha1().equals(miniGitSha1());
+        }
+        return false;
+    }
+
     /**
      * Creates a new commit formed by merge.
      * @param snapshot the data of the tree object this commit refers to.

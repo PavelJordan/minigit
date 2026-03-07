@@ -14,6 +14,21 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>6.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>6.0.0</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
     <!-- ChatGPT helped me code the things below to match what I wanted - package jar with the correct main class with maven -->
     <build>
         <finalName>minigit</finalName>

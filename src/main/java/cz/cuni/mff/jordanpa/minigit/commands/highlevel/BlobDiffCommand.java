@@ -41,8 +41,8 @@ public final class BlobDiffCommand implements Command {
                 return 1;
             }
             List<MiniGitDiff.DiffResult> result = MiniGitDiff.diff(blob1, blob2);
-            List<String> lines1 = blob1.getContentReader().readAllLines();
-            List<String> lines2 = blob2.getContentReader().readAllLines();
+            List<String> lines1 = new String(blob1.getContentReader().readAllBytes()).lines().toList();
+            List<String> lines2 = new String(blob2.getContentReader().readAllBytes()).lines().toList();
             for (MiniGitDiff.DiffResult diffResult : result) {
                 IO.println("Change from line " + (diffResult.replaceFrom() + 1));
                 IO.println("<<<<<<<<<<<< FROM");
