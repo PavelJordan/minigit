@@ -448,6 +448,10 @@ public final class Repository implements MinigitObjectLoader {
         }
     }
 
+    /**
+     * Get the index (the tracked files/staged files) in this repository.
+     * @return Copy of the map "path -> blob hash".
+     */
     public Map<Path, String> getTrackedFiles(){
         return Map.copyOf(stagedIndex);
     }

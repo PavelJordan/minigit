@@ -9,6 +9,11 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Command that creates a tree object from the staging area (index) and inserts it into the repository database.
+ *
+ * @apiNote It does not work with a project manager - only one repository at a time.
+ */
 public final class TreeCommand implements Command {
     @Override
     public String name() {
@@ -34,15 +39,31 @@ public final class TreeCommand implements Command {
     @Override
     public int execute(String[] args) {
         try {
+            if (args.length != 0) {
+                IO.println("Incorrect number of arguments. Provide no arguments.");
+                return 1;
+            }
             Repository repo = Repository.load(Path.of(".minigit"));
+
+            // Get the staged files (also named tracked files)
             Map<Path, String> trackedFiles = repo.getTrackedFiles();
+
+            // Build the tree to save (includes the subtrees needed)
+            // The runtime trees will have CWD-relative addresses, the file-saved trees relative to the repo root path.
             List<Tree> trees = Tree.buildTree(trackedFiles, repo.getRootPath());
+
+            // Print the hashes of all the trees. The last tree will be the root.
             IO.println("\nPrinting descriptions:");
             for (Tree tree : trees) {
                 IO.println(tree.getDescription());
             }
+
+            // Set up the tree objects to be saved into .minigit/objects
             trees.forEach(repo::storeInternally);
+
+            // Commit the changes (save the trees)
             repo.save();
+
             IO.println("Tree successfully built. The root tree data is: " + trees.getLast().miniGitSha1());
         } catch (IOException e) {
             IO.println(e);

@@ -8,6 +8,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/**
+ * Creates a new blob object from the given file and inserts it into the repository database (.minigit/objects).
+ *
+ * @apiNote It does not work with a project manager - only one repository at a time.
+ */
 public final class BlobCommand implements Command {
     @Override
     public String name() {
@@ -45,7 +50,11 @@ public final class BlobCommand implements Command {
                 return 1;
             }
             Blob blob = new Blob(filePath);
+
+            // Set-ups the blob to be stored in the database
             repo.storeInternally(blob);
+
+            // Actually save the file into .minigit/objects
             repo.save();
         }
         catch (IOException e) {

@@ -8,7 +8,29 @@ import java.util.*;
  * so now I wouldn't need him to help me with this.
  */
 public final class PluginLoader {
+
+    /**
+     * Map of all loaded commands.
+     */
     private static Map<String, Command> commands;
+
+    /**
+     * Loads all commands that are registered into the ServiceLoader via manifest and implement the {@link Command} interface.
+     * @return Map of all loaded commands (name -> command to execute)
+     * @implNote The commands are loaded only once.
+     */
+    public static Map<String, Command> getLoadedPlugins() {
+        if (commands != null) {
+            return commands;
+        }
+        commands = loadAllCommands();
+        return commands;
+    }
+
+    /**
+     * Loads all commands that are registered into the ServiceLoader via manifest and implement the {@link Command} interface.
+     * @return Map of all loaded commands (name -> command to execute)
+     */
     private static Map<String, Command> loadAllCommands() {
         Map<String, Command> commandRegistry = new HashMap<>();
         ServiceLoader<Command> loader = ServiceLoader.load(Command.class);
@@ -18,13 +40,5 @@ public final class PluginLoader {
         }
 
         return commandRegistry;
-    }
-
-    public static Map<String, Command> getLoadedPlugins() {
-        if (commands != null) {
-            return commands;
-        }
-        commands = loadAllCommands();
-        return commands;
     }
 }
