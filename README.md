@@ -10,6 +10,10 @@ You can find the user manual [here](docs/UserManual.md). The high-level programm
 
 For more detailed API documentation, you can run `mvn javadoc:javadoc` and open `target/reports/apidocs/index.html` in your browser.
 
+There is also [this file](docs/DiffImplementation.txt), which describes the implementation of the diff algorithm.
+
+There are also some unit tests in the `src/test` directory.
+
 ## Installation
 
 Be warned! If you have a different program called `minigit` installed, it might be overwritten.
@@ -22,5 +26,7 @@ Be warned! If you have a different program called `minigit` installed, it might 
 ## Legal
 
 Educational reimplementation inspired by Git; not affiliated with the Git project.
+
+[Repository](https://github.com/PavelJordan/minigit)
 
 Licensed under the MIT License.
