@@ -7,6 +7,13 @@ import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Command that deletes a branch. If the branch is HEAD, the command fails, similarly, if the branch does not exist (gracefully, but exit code still 1).
+ *
+ * <p>
+ *     It does not work with a project manager - only one repository at a time.
+ * </p>
+ */
 public final class BranchDeleteCommand implements Command {
 
     @Override

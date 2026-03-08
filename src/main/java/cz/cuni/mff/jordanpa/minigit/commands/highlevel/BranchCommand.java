@@ -7,6 +7,13 @@ import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Command that creates a new branch at the current commit (HEAD). If no HEAD is present, the command fails (gracefully, but exit code still 1).
+ *
+ * <p>
+ *     It does not work with a project manager - only one repository at a time.
+ * </p>
+ */
 public final class BranchCommand implements Command {
     @Override
     public String name() {

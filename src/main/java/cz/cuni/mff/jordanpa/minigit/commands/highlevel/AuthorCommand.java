@@ -9,6 +9,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+/**
+ * Sets the author of the current repository
+ *
+ * <p>
+ *     Works with a project manager - applies to all repositories in the project.
+ * </p>
+ */
 public final class AuthorCommand implements Command {
 
     @Override

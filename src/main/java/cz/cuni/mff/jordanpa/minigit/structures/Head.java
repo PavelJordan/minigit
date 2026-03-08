@@ -5,6 +5,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 
+/**
+ * Represents a head of a repository.
+ *
+ * <p>
+ *     A head is a pointer to a commit or a branch (or UNSET). If the commit is UNSET, data contains undefined things.
+ * </p>
+ * <p>
+ *     If the head is a pointer to a commit, the data field contains the hash of the commit.
+ *     After a new commit is made, it simply advances. The head is said to be in a DETACHED state.
+ * </p>
+ * <p>
+ *     If the head is a pointer to a branch, the data field contains the name of the branch.
+ *     After a new commit is made, the branch advances together with the head.
+ * </p>
+ * @param type UNSET, detached to COMMIT, or following a BRANCH
+ * @param data garbage when UNSET, hash of the commit when detached, name of the branch when following
+ */
 public record Head(Type type, String data) {
     public enum Type {
         BRANCH,

@@ -10,6 +10,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+/**
+ * Shows the diff between two blobs. The blobs are specified by their hash and must be found in the current repository.
+ *
+ * <p>
+ *     It does not work with a project manager - only one repository at a time.
+ * </p>
+ */
 public final class BlobDiffCommand implements Command {
     @Override
     public String name() {
@@ -40,15 +47,23 @@ public final class BlobDiffCommand implements Command {
         }
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
+
+            // Load both blobs
             MiniGitObject blob1Obj = repo.loadFromInternal(args[0]);
             MiniGitObject blob2Obj = repo.loadFromInternal(args[1]);
             if (!(blob1Obj instanceof Blob blob1) || !(blob2Obj instanceof Blob blob2)) {
                 IO.println("Blobs with specified data does not exist.");
                 return 1;
             }
+
+            // Diff them
             List<MiniGitDiff.DiffResult> result = MiniGitDiff.diff(blob1, blob2);
+
+            // Get their lines to show the lines that differ
             List<String> lines1 = new String(blob1.getContentReader().readAllBytes()).lines().toList();
             List<String> lines2 = new String(blob2.getContentReader().readAllBytes()).lines().toList();
+
+            // Print the diff - go over the results, and print the lines that differ
             for (MiniGitDiff.DiffResult diffResult : result) {
                 IO.println("Change from line " + (diffResult.replaceFrom() + 1));
                 IO.println("<<<<<<<<<<<< FROM");

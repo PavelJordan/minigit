@@ -9,6 +9,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+/**
+ * Stage ignored files for deletion.
+ *
+ * <p>
+ *     Works with a project manager - applies to all repositories in the project.
+ * </p>
+ */
 public final class AddIgnoredCommand implements Command {
     @Override
     public String name() {
@@ -43,6 +50,7 @@ public final class AddIgnoredCommand implements Command {
                 List<String> ignored = repo.getIgnored();
                 for (String pattern : args) {
                     for (Path file: FileHelper.getAllFiles(Path.of(pattern), List.of())) {
+                        // This is reverse logic to add command - stage those which are ignored. Which will always result in deletion.
                         if (FileHelper.isExcluded(file, ignored)) {
                             IO.println("Staging ignored file " + file + " for deletion...");
                             repo.addToIndex(file);

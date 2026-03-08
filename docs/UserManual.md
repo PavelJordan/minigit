@@ -60,8 +60,6 @@ This works for:
  - add (adds only the files that belong to the respective repositories)
  - add-ignored
  - author (adds author to all repositories)
- - branch (creates a branch in all repositories on their current commit)
- - branch-delete (deletes a branch in all repositories)
  - commit (Creates a commit in all repositories with the same message)
  - restore (restore unstaged changes in all repositories)
  - restore-staged (restore staged changes in all repositories)

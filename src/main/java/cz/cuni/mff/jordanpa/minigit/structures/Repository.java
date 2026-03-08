@@ -218,6 +218,9 @@ public final class Repository implements MinigitObjectLoader {
 
     private Head head;
 
+    /**
+     * @return The current HEAD, which is either unset, detached to commit, or following branch, as loaded from its file.
+     */
     public Head getHead(){
         return head;
     }
@@ -243,18 +246,43 @@ public final class Repository implements MinigitObjectLoader {
         return mainRepoPath;
     }
 
+    /**
+     * @return A copy of the map "branch name -> commit hash".
+     */
     public Map<String, String> getBranches() {
         return Map.copyOf(branches);
     }
 
+    /**
+     * Deletes the specified branch (if it exists - otherwise does nothing).
+     *
+     * <p>
+     *     Of course, the changes are applied only after calling {@link #save()},
+     *     as with most of the other methods.
+     * </p>
+     *
+     * @param branchName The branch name to delete
+     */
     public void deleteBranch(String branchName) {
         branches.remove(branchName);
     }
 
+    /**
+     * @return A copy of the map "tag name -> commit hash".
+     */
     public Map<String, String> getTags() {
         return Map.copyOf(tags);
     }
 
+    /**
+     * Deletes the specified tag (if it exists - otherwise does nothing).
+     *
+     * <p>
+     *     Of course, the changes are applied only after calling {@link #save()},
+     * </p>
+     *
+     * @param tagName The tag name to delete
+     */
     public void deleteTag(String tagName) {
         tags.remove(tagName);
     }
@@ -637,7 +665,11 @@ public final class Repository implements MinigitObjectLoader {
         }
     }
 
-    public void setCurrentAuthor(Author author) throws IOException {
+    /**
+     * Set the current author of the repository. On the next save, it will be persisted.
+     * @param author The author to set.
+     */
+    public void setCurrentAuthor(Author author) {
         currentAuthor = author;
     }
 
@@ -645,6 +677,16 @@ public final class Repository implements MinigitObjectLoader {
         return currentAuthor;
     }
 
+    /**
+     * Simply sets a branch to a commit hash. If the branch exists, it is overwritten (and the user is warned in the console).
+     *
+     * <p>
+     *     The change is, as with most other methods, applied only after using {@link #save()}.
+     * </p>
+     *
+     * @param arg The name of the branch to set.
+     * @param hash The hash of the commit the branch points to.
+     */
     public void setBranch(String arg, String hash){
         if (branches.containsKey(arg)) {
             IO.println("Branch " + arg + " moved from: " + branches.get(arg) + " to " + hash);
