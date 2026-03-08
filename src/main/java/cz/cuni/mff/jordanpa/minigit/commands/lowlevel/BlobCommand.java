@@ -11,7 +11,9 @@ import java.nio.file.Path;
 /**
  * Creates a new blob object from the given file and inserts it into the repository database (.minigit/objects).
  *
- * @apiNote It does not work with a project manager - only one repository at a time.
+ * <p>
+ *     It does not work with a project manager - only one repository at a time.
+ * </p>
  */
 public final class BlobCommand implements Command {
     @Override

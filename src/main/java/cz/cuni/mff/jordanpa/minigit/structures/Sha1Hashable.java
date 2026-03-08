@@ -17,9 +17,13 @@ public interface Sha1Hashable {
 
     /**
      * Converts a byte array to a hexadecimal string.
+     *
+     * <p>
+     *     This is the SHA-1 hash used in MiniGit and files, not the byte array, for readability.
+     * </p>
+     *
      * @param hash the byte array to convert
      * @return the hexadecimal string representation of the byte array.
-     * @implNote This is the SHA-1 hash used in MiniGit and files, not the byte array, for readability.
      */
     default String byteArray2Hex(final byte[] hash) {
         Formatter formatter = new Formatter();

@@ -16,8 +16,12 @@ public final class PluginLoader {
 
     /**
      * Loads all commands that are registered into the ServiceLoader via manifest and implement the {@link Command} interface.
+     *
+     * <p>
+     *     The commands are loaded only once.
+     * </p>
+     *
      * @return Map of all loaded commands (name -> command to execute)
-     * @implNote The commands are loaded only once.
      */
     public static Map<String, Command> getLoadedPlugins() {
         if (commands != null) {

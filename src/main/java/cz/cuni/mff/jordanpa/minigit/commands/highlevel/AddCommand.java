@@ -12,7 +12,9 @@ import java.util.*;
 /**
  * Command to add files to the staging area (index).
  *
- * @apiNote Works with a project manager - applies to all repositories in the project.
+ * <p>
+ *     Works with a project manager - applies to all repositories in the project.
+ * </p>
  */
 public final class AddCommand implements Command {
     @Override

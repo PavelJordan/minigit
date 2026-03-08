@@ -10,7 +10,9 @@ import java.nio.file.Path;
 /**
  * Inspects the repository database for the given hash - it can be either tree, blob or commit.
  *
- * @apiNote It does not work with a project manager - only one repository at a time.
+ * <p>
+ *     It does not work with a project manager - only one repository at a time.
+ * </p>
  */
 public final class InspectCommand implements Command {
     @Override

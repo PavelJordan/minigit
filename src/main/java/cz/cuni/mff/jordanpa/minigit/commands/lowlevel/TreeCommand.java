@@ -12,7 +12,9 @@ import java.util.Map;
 /**
  * Command that creates a tree object from the staging area (index) and inserts it into the repository database.
  *
- * @apiNote It does not work with a project manager - only one repository at a time.
+ * <p>
+ *     It does not work with a project manager - only one repository at a time.
+ * </p>
  */
 public final class TreeCommand implements Command {
     @Override
