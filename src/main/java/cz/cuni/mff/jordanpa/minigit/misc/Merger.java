@@ -2,8 +2,6 @@ package cz.cuni.mff.jordanpa.minigit.misc;
 
 import cz.cuni.mff.jordanpa.minigit.structures.*;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,18 +10,78 @@ import java.util.*;
 
 import static cz.cuni.mff.jordanpa.minigit.misc.CommonAncestorFinder.findCommonAncestor;
 
+/**
+ * Helper class for merging commits and files.
+ *
+ * <p>
+ *     This class handles commit-level merge logic, including fast-forward detection,
+ *     conflict detection, and three-way file merging.
+ * </p>
+ */
 public final class Merger {
 
+    /**
+     * Result of a three-way merge on a single file.
+     * @param blob The resulting merged blob.
+     * @param hasConflicts Whether the merge contains conflict markers.
+     */
     private record ThreeWayMergeResult(Blob blob, boolean hasConflicts) { }
 
+    /**
+     * Type of merge result.
+     */
     public enum MergeResultType {
+        /**
+         * The merge was performed into the filesystem and index.
+         */
         MERGED_INTO_FS,
+
+        /**
+         * The merge can be resolved by fast-forward.
+         */
         FAST_FORWARD,
+
+        /**
+         * The merge failed due to invalid state or corrupted data.
+         */
         ERROR,
+
+        /**
+         * There is nothing to do because the commits are already effectively merged.
+         */
         NOTHING_TO_DO
     }
+
+    /**
+     * A merge conflict on a single path.
+     * @param path The conflicting path.
+     * @param message Human-readable description of the conflict.
+     */
     public record Conflict(Path path, String message) { }
+
+    /**
+     * Result of a commit merge operation.
+     * @param type The type of merge result.
+     * @param newStagedIndex The new staged index after merging.
+     * @param mergeIndexBlobsToSave Blobs that should be saved into the repository after merging.
+     * @param conflicts List of conflicts detected during the merge.
+     */
     public record MergeResult(MergeResultType type, HashMap<Path, String> newStagedIndex, HashMap<Path, Blob> mergeIndexBlobsToSave, List<Conflict> conflicts) { }
+
+    /**
+     * Merge one commit into another.
+     *
+     * <p>
+     *     This method first finds the common ancestor, handles trivial cases such as fast-forward
+     *     and nothing-to-do, and then merges all files from the three involved trees.
+     * </p>
+     *
+     * @param from The commit to merge from.
+     * @param into The commit to merge into.
+     * @param objectLoader The loader used to load trees and blobs.
+     * @return Result of the merge operation.
+     * @throws IOException If repository data is corrupted or files cannot be loaded/written.
+     */
     public static MergeResult merge(Commit from, Commit into, MinigitObjectLoader objectLoader) throws IOException {
 
         MiniGitObject fromTreeObj = objectLoader.loadFromInternal(from.getTreeHash());
@@ -150,6 +208,14 @@ public final class Merger {
         return new MergeResult(MergeResultType.MERGED_INTO_FS, newStagedIndex, mergeIndexBlobsToSave, conflicts);
     }
 
+    /**
+     * Restore the specified blob into the filesystem.
+     *
+     * @param loader The loader used to load the blob.
+     * @param blobHash Hash of the blob to restore.
+     * @param path Path to restore the blob contents to.
+     * @throws IOException If the blob cannot be loaded or written.
+     */
     private static void saveBlob(MinigitObjectLoader loader, String blobHash, Path path) throws IOException {
         MiniGitObject blobObj = loader.loadFromInternal(blobHash);
         if (!(blobObj instanceof Blob blob)) {
@@ -164,8 +230,30 @@ public final class Merger {
     // spend time on it, as the project already spans thousands of lines, and I want to spend my attention on
     // architectonically interesting problems.
 
+    /**
+     * Cluster of overlapping or adjacent changes in the base file.
+     * @param start Start of the cluster in base lines.
+     * @param end End of the cluster in base lines.
+     * @param oursEndIndex End index in the diff list for ours.
+     * @param theirsEndIndex End index in the diff list for theirs.
+     */
     private record ChangeCluster(int start, int end, int oursEndIndex, int theirsEndIndex) { }
 
+    /**
+     * Perform a three-way merge of three blobs.
+     *
+     * <p>
+     *     The base version is compared to both modified versions. Non-overlapping changes are merged
+     *     automatically, while overlapping changes produce conflict markers.
+     * </p>
+     *
+     * @param baseHash Hash of the base blob.
+     * @param oursHash Hash of our blob.
+     * @param theirsHash Hash of their blob.
+     * @param loader The loader used to load the blobs.
+     * @return Resulting merged blob and information whether conflicts occurred.
+     * @throws IOException If the blobs cannot be loaded or are invalid.
+     */
     private static ThreeWayMergeResult threeWayMerge(
             String baseHash,
             String oursHash,
@@ -203,8 +291,10 @@ public final class Merger {
             int nextTheirsStart = nextDiffStart(baseTheirsDiff, theirsDiffIndex);
             int nextStart = Math.min(nextOursStart, nextTheirsStart);
 
+            // First copy the unchanged part before the next change cluster.
             appendRange(mergedLines, baseLines, basePos, nextStart);
 
+            // Then compute one whole cluster of related changes in both branches.
             ChangeCluster cluster = computeCluster(baseOursDiff, oursDiffIndex, baseTheirsDiff, theirsDiffIndex);
 
             List<String> baseRegion = copyRange(baseLines, cluster.start(), cluster.end());
@@ -219,6 +309,7 @@ public final class Merger {
                     cluster.start(), cluster.end()
             );
 
+            // Standard three-way merge cases.
             if (oursRegion.equals(theirsRegion)) {
                 mergedLines.addAll(oursRegion);
             }
@@ -250,6 +341,13 @@ public final class Merger {
         return new ThreeWayMergeResult(new Blob(out.toByteArray()), hasConflicts);
     }
 
+    /**
+     * Get the start of the next diff, or {@link Integer#MAX_VALUE} if there is none.
+     *
+     * @param diffs List of diffs.
+     * @param index Current diff index.
+     * @return Start line of the next diff.
+     */
     private static int nextDiffStart(List<MiniGitDiff.DiffResult> diffs, int index) {
         if (index >= diffs.size()) {
             return Integer.MAX_VALUE;
@@ -257,6 +355,14 @@ public final class Merger {
         return Math.toIntExact(diffs.get(index).replaceFrom());
     }
 
+    /**
+     * Check whether a diff belongs to the current change cluster.
+     *
+     * @param diff The diff to test.
+     * @param clusterStart Start of the cluster.
+     * @param clusterEnd End of the cluster.
+     * @return True if the diff belongs to the cluster, false otherwise.
+     */
     private static boolean belongsToCluster(MiniGitDiff.DiffResult diff, int clusterStart, int clusterEnd) {
         int diffStart = Math.toIntExact(diff.replaceFrom());
         if (clusterEnd == clusterStart) {
@@ -265,6 +371,15 @@ public final class Merger {
         return diffStart < clusterEnd;
     }
 
+    /**
+     * Compute one cluster of overlapping or adjacent changes from both diff lists.
+     *
+     * @param oursDiffs Diffs from base to ours.
+     * @param oursStartIndex Starting index in our diff list.
+     * @param theirsDiffs Diffs from base to theirs.
+     * @param theirsStartIndex Starting index in their diff list.
+     * @return Computed change cluster.
+     */
     private static ChangeCluster computeCluster(
             List<MiniGitDiff.DiffResult> oursDiffs,
             int oursStartIndex,
@@ -299,6 +414,18 @@ public final class Merger {
         return new ChangeCluster(clusterStart, clusterEnd, o, t);
     }
 
+    /**
+     * Materialize one region of a changed file by applying relevant diffs to the base region.
+     *
+     * @param baseLines Lines of the base file.
+     * @param changedLines Lines of the changed file.
+     * @param diffs Diff list from base to changed file.
+     * @param fromDiffIndex First relevant diff index.
+     * @param toDiffIndex End diff index.
+     * @param regionStart Start of the region in base lines.
+     * @param regionEnd End of the region in base lines.
+     * @return Materialized merged region.
+     */
     private static List<String> materializeRegion(
             List<String> baseLines,
             List<String> changedLines,
@@ -328,18 +455,41 @@ public final class Merger {
         return result;
     }
 
+    /**
+     * Copy a range of lines into a new list.
+     *
+     * @param lines Source lines.
+     * @param from Start index.
+     * @param to End index.
+     * @return Copied range.
+     */
     private static List<String> copyRange(List<String> lines, int from, int to) {
         List<String> result = new ArrayList<>();
         appendRange(result, lines, from, to);
         return result;
     }
 
+    /**
+     * Append a range of lines from one list to another.
+     *
+     * @param out Output list.
+     * @param source Source list.
+     * @param from Start index.
+     * @param to End index.
+     */
     private static void appendRange(List<String> out, List<String> source, int from, int to) {
         for (int i = from; i < to; i++) {
             out.add(source.get(i));
         }
     }
 
+    /**
+     * Add standard conflict markers and both conflicting regions.
+     *
+     * @param out Output list of merged lines.
+     * @param oursRegion Our conflicting region.
+     * @param theirsRegion Their conflicting region.
+     */
     private static void addConflictMarkers(List<String> out, List<String> oursRegion, List<String> theirsRegion) {
         out.add("<<<<<<< OURS");
         out.addAll(oursRegion);

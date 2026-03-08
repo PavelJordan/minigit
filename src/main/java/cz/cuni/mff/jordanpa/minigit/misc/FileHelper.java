@@ -9,6 +9,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * Helper methods for working with files and file status comparisons.
+ *
+ * <p>
+ *     This class mainly helps with recursive file listing, path normalization, ignore-pattern checks,
+ *     and comparing two file indices.
+ * </p>
+ */
 public final class FileHelper {
 
     /**
@@ -61,20 +69,43 @@ public final class FileHelper {
         return paths;
     }
 
+    /**
+     * Convert a path to a path relative to the specified directory.
+     *
+     * @param entry The path to convert.
+     * @param directory The directory to relativize against.
+     * @return The normalized path of entry relative to directory.
+     */
     public static Path getRelativePathToDirectory(Path entry, Path directory) {
         return directory.toAbsolutePath().relativize(entry.toAbsolutePath()).normalize();
     }
 
     /**
      * Test if the path should be excluded based on the patterns (If it starts or ends with any of the patterns)
+     * @param path The path to test.
+     * @param toExclude The exclude patterns.
      * @return True if it should be excluded based on the patterns, false otherwise.
      */
     public static boolean isExcluded(Path path, List<String> toExclude) {
         return toExclude.stream().anyMatch(ex -> path.toString().startsWith(ex) || path.toString().endsWith(ex));
     }
 
+    /**
+     * Compare two file indices and determine file statuses between them.
+     *
+     * <p>
+     *     The currentIndex is treated as the newer/current state, while indexToCompare is the older/base state.
+     * </p>
+     *
+     * @param currentIndex The current index to inspect.
+     * @param indexToCompare The index to compare against.
+     * @return List of file statuses describing differences between the two indices.
+     */
     public static List<Repository.FileStatus> getFileStatusesFromComparison(HashMap<Path, String> currentIndex, HashMap<Path, String> indexToCompare) {
         List<Repository.FileStatus> statuses = new ArrayList<>();
+
+        // First, go through all files currently present and decide whether they stayed same,
+        // were modified, or are completely new compared to the base index.
         for (Path path : currentIndex.keySet()) {
             String workingDirectoryHash = currentIndex.get(path);
             Repository.FileStatusType againstCommit;
@@ -91,6 +122,8 @@ public final class FileHelper {
             }
             statuses.add(new Repository.FileStatus(path, againstCommit));
         }
+
+        // Then add files that existed in the base index, but are no longer present now.
         var deletedAgainstStaged = indexToCompare.keySet().stream().filter(path -> !currentIndex.containsKey(path));
         deletedAgainstStaged.forEach(path -> statuses.add(new Repository.FileStatus(path, Repository.FileStatusType.DELETED)));
         return statuses;

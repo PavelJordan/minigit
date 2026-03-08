@@ -44,16 +44,30 @@ public final class MiniGitDiff {
      * @param j Line in the "from" file
      */
     private record KCandidate(long i, long j) {}
+
+    /**
+     * Helper structure storing the best known k-candidates and their backtracking information.
+     */
     private static final class KVector {
         // indexed by k
         private final List<KCandidate> kVector = new ArrayList<>();
         private final HashMap<KCandidate, KCandidate> backTrack = new HashMap<>();
 
+        /**
+         * Create an empty K-vector with the initial virtual starting candidate.
+         */
         public KVector() {
             KCandidate start = new KCandidate(-1, -1);
             kVector.add(start);
             backTrack.put(start, null);
         }
+
+        /**
+         * Get currently the best candidate for the specified k.
+         *
+         * @param k The k to retrieve the best candidate for.
+         * @return The best candidate for k, or a sentinel candidate if k is out of range.
+         */
         public KCandidate getBest(int k) {
             if (k < kVector.size()) {
                 return kVector.get(k);
@@ -61,6 +75,16 @@ public final class MiniGitDiff {
             return new KCandidate(Long.MAX_VALUE, Long.MAX_VALUE);
         }
 
+        /**
+         * Try to insert a new candidate into the K-vector.
+         *
+         * <p>
+         *     If the candidate improves the best known path for some k, it is inserted and its predecessor
+         *     is remembered for backtracking.
+         * </p>
+         *
+         * @param candidate The candidate to try to insert.
+         */
         public void tryInsertCandidate(KCandidate candidate) {
             int currentK = 0;
             // TODO use binary search
@@ -80,6 +104,11 @@ public final class MiniGitDiff {
             }
         }
 
+        /**
+         * Get the best path reconstructed from the backtracking information.
+         *
+         * @return List of k-candidates forming the best path, in forward order.
+         */
         public List<KCandidate> getTrack() {
             ArrayList<KCandidate> result = new ArrayList<>();
             for (KCandidate bestPath = getBest(kVector.size() - 1); bestPath != null; bestPath = backTrack.get(bestPath)) {
@@ -155,7 +184,17 @@ public final class MiniGitDiff {
         return results;
     }
 
-    private static HashMap<String, LineIndices> getEquivalenceClasses(List<String> lines) throws IOException {
+    /**
+     * Get equivalence classes of lines in the specified list.
+     *
+     * <p>
+     *     Each distinct line maps to all indices where it appears.
+     * </p>
+     *
+     * @param lines The lines to group into equivalence classes.
+     * @return Map "line contents -> indices where the line appears".
+     */
+    private static HashMap<String, LineIndices> getEquivalenceClasses(List<String> lines) {
         HashMap<String, LineIndices> equivalenceClasses = new HashMap<>();
         for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
             String line = lines.get(lineIndex);
@@ -167,10 +206,21 @@ public final class MiniGitDiff {
         return equivalenceClasses;
     }
 
+    /**
+     * Get, for each line of the base file, all matching line indices in the other file.
+     *
+     * @param baseFile The file whose lines are iterated in order.
+     * @param findMatchingLinesIn The file in which matching lines are searched for.
+     * @return List indexed by lines of baseFile, where each item contains matching indices in findMatchingLinesIn.
+     * @throws IOException If reading blob contents fails.
+     */
     private static List<LineIndices> getMatchingLines(Blob baseFile, Blob findMatchingLinesIn) throws IOException {
         HashMap<String, LineIndices> equivalenceClasses;
         equivalenceClasses = getEquivalenceClasses(findMatchingLinesIn.readAllLines());
         List<LineIndices> matchingLines = new ArrayList<>();
+
+        // For each line of the base file, either reuse the matching indices from the other file
+        // or store an empty list if that line does not occur there.
         for (String line : baseFile.readAllLines()) {
             if (equivalenceClasses.containsKey(line)) {
                 matchingLines.add(equivalenceClasses.get(line));
