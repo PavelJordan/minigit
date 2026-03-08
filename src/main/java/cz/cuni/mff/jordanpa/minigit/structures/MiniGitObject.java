@@ -39,8 +39,8 @@ public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob,
         throw new IOException("Unknown object type: {" + new String(header) + "]}.");
     }
 
-    static void saveObjectBasedOnHash(Path objectsPath, String hash, MiniGitObject obj) throws IOException {
-        Path objPath = objectsPath.resolve(Path.of(hash.substring(0, 2), hash.substring(2)));
+    static void saveObjectBasedOnHash(Path objectsPath, MiniGitObject obj) throws IOException {
+        Path objPath = objectsPath.resolve(Path.of(obj.miniGitSha1().substring(0, 2), obj.miniGitSha1().substring(2)));
         obj.write(objPath);
     }
 

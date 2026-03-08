@@ -312,7 +312,7 @@ public final class Repository implements MinigitObjectLoader {
             Files.createDirectory(objectsPath);
         }
         for (Map.Entry<String, MiniGitObject> obj : objects.entrySet()) {
-            MiniGitObject.saveObjectBasedOnHash(objectsPath, obj.getKey(), obj.getValue());
+            MiniGitObject.saveObjectBasedOnHash(objectsPath, obj.getValue());
         }
         saveIndex();
         saveHead();
