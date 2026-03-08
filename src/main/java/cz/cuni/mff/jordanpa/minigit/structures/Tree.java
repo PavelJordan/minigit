@@ -11,8 +11,27 @@ import static cz.cuni.mff.jordanpa.minigit.misc.FileHelper.getFileStatusesFromCo
 
 /**
  * Folder, as represented in MiniGit. Contains blobs and more trees.
+ *
+ * <p>
+ *     Similar as blobs, it does not know its own name and only
+ *     remembers the hashes to the contents.
+ * </p>
+ * <p>
+ *     Again, refer to the `docs/ProgrammerDocumentation.md` to understand why it is made this way.
+ * </p>
  */
 public final class Tree extends MiniGitObject implements TreeContent {
+
+    public enum TreeEntryType { BLOB, TREE }
+
+    public record TreeEntry(String hash, TreeEntryType type) {}
+
+    /**
+     * Map name -> data + type of tree content.
+     */
+    private final SortedMap<String, TreeEntry> contents = new TreeMap<>();
+
+    String sha1;
 
     /**
      * Build a tree from its contents in a byte array
@@ -36,32 +55,18 @@ public final class Tree extends MiniGitObject implements TreeContent {
         }
     }
 
-    private Path safeAbsFromCwdRelative(Path p, MinigitObjectLoader loader) throws IOException {
-        Path abs = Path.of("./").toAbsolutePath().resolve(p).normalize();
-        if (!abs.startsWith(loader.getRootPath().toAbsolutePath().normalize())) {
-            throw new IOException("Path escapes repository: " + p);
-        }
-        return abs;
-    }
-
-    public enum TreeEntryType { BLOB, TREE }
-
-    public record TreeEntry(String hash, TreeEntryType type) {}
-
     /**
-     * Map name -> data + type of tree content.
-     */
-    private final SortedMap<String, TreeEntry> contents = new TreeMap<>();
-
-    /**
-     * Map name -> data + type of tree content.
+     * Create a tree from its already prepared contents.
+     *
+     * @param contents Map name -> data + type of tree content.
      */
     Tree(Map<String, TreeEntry> contents) {
         this.contents.putAll(contents);
     }
 
-    String sha1;
-
+    /**
+     * @return A copy of the map "name -> tree entry".
+     */
     public Map<String, TreeEntry> getContents() {
         return Map.copyOf(contents);
     }
@@ -87,11 +92,19 @@ public final class Tree extends MiniGitObject implements TreeContent {
         return buildTreeInternal(files);
     }
 
+    /**
+     * Recursively build a hierarchy of trees from repository-root-relative paths.
+     *
+     * @param files Files to build the tree from.
+     * @return All the trees in the tree hierarchy, the last one being the current root tree.
+     */
     private static LinkedList<Tree> buildTreeInternal(Map<Path, String> files) {
         HashSet<Path> treesHere = new HashSet<>();
         LinkedList<Tree> trees = new LinkedList<>();
         HashMap<String, TreeEntry> contents = new HashMap<>();
+
         for (Path file : files.keySet()) {
+            // Files directly in this directory become blob entries, deeper paths are grouped by their first directory.
             if (file.getParent() == null) {
                 IO.println("Blob found: " + file);
                 contents.put(file.getFileName().toString(), new TreeEntry(files.get(file), TreeEntryType.BLOB));
@@ -101,9 +114,12 @@ public final class Tree extends MiniGitObject implements TreeContent {
                 treesHere.add(dir);
             }
         }
+
         for (Path dir : treesHere) {
             HashMap<Path, String> filesInDir = new HashMap<>();
             files.entrySet().stream().filter(entry -> entry.getKey().startsWith(dir)).forEach(entry -> filesInDir.put(entry.getKey().subpath(1, entry.getKey().getNameCount()), entry.getValue()));
+
+            // Recursively build the subtree and then reference its root from the current tree.
             LinkedList<Tree> lowerTrees = buildTreeInternal(filesInDir);
             if (lowerTrees.isEmpty()) {
                 IO.println("Building failed here");
@@ -112,11 +128,15 @@ public final class Tree extends MiniGitObject implements TreeContent {
             contents.put(dir.getFileName().toString(), new TreeEntry(lowerTrees.getLast().miniGitSha1(), TreeEntryType.TREE));
             trees.addAll(lowerTrees);
         }
+
         Tree treeRoot = new Tree(contents);
         trees.add(treeRoot);
         return trees;
     }
 
+    /**
+     * @return SHA-1 hash of this tree.
+     */
     @Override
     public String miniGitSha1() {
         if (sha1 != null) {
@@ -134,6 +154,12 @@ public final class Tree extends MiniGitObject implements TreeContent {
         return sha1;
     }
 
+    /**
+     * Write this tree in its internal MiniGit object format to the given path.
+     *
+     * @param path Destination path inside MiniGit object storage.
+     * @throws IOException If writing fails.
+     */
     @Override
     void write(Path path) throws IOException {
         ByteArrayOutputStream baOs = new ByteArrayOutputStream();
@@ -141,6 +167,9 @@ public final class Tree extends MiniGitObject implements TreeContent {
         writeBytes(baOs.toByteArray(), path);
     }
 
+    /**
+     * @return A human-readable description of this tree.
+     */
     @Override
     public String getDescription() {
         StringBuilder builder = new StringBuilder("Object:\ntree\nContent:\n");
@@ -150,27 +179,33 @@ public final class Tree extends MiniGitObject implements TreeContent {
         return builder.toString();
     }
 
-    private void writeToStream(OutputStream out) throws IOException {
-        out.write(TREE_HEADER);
-        for (var entry : contents.entrySet()) {
-            out.write(entry.getValue().hash.getBytes());
-            out.write(' ');
-            out.write(entry.getValue().type.name().getBytes());
-            out.write(' ');
-            out.write(entry.getKey().getBytes());
-            out.write('\n');
-        }
-    }
-
+    /**
+     * Get the index represented by this tree.
+     *
+     * @param loader The loader to use to load subtrees.
+     * @return Map "path -> blob hash" represented by this tree.
+     * @throws IOException If loading subtrees fails.
+     */
     public HashMap<Path, String> getIndex(MinigitObjectLoader loader) throws IOException {
         return new HashMap<>(getIndexOfTreeInternal(this, loader.getRootPath(), loader));
     }
 
+    /**
+     * Recursively build the index of the specified tree.
+     *
+     * @param tree The tree to build the index of.
+     * @param pathSoFar The absolute path of the current tree root in the repository.
+     * @param loader The loader to use to load subtrees.
+     * @return Map "path -> blob hash" represented by this tree.
+     * @throws IOException If loading subtrees fails.
+     */
     private HashMap<Path, String> getIndexOfTreeInternal(Tree tree, Path pathSoFar, MinigitObjectLoader loader) throws IOException {
         HashMap<Path, String> treeIndex = new HashMap<>();
         for (Map.Entry<String, Tree.TreeEntry> entry : tree.getContents().entrySet()) {
             String name = entry.getKey();
             Tree.TreeEntry value = entry.getValue();
+
+            // Trees are expanded recursively, blobs are added directly to the resulting index.
             if (value.type() == Tree.TreeEntryType.TREE) {
                 MiniGitObject possiblySubtreeToRestore = loader.loadFromInternal(value.hash());
                 if (possiblySubtreeToRestore instanceof Tree subtreeToRestore) {
@@ -187,6 +222,13 @@ public final class Tree extends MiniGitObject implements TreeContent {
         return treeIndex;
     }
 
+    /**
+     * Show the difference between this tree and another tree.
+     *
+     * @param treeToCompare The tree to compare this tree to.
+     * @param loader The loader to use to load the tree contents.
+     * @throws IOException If building indices of the trees fails.
+     */
     public void showTreeDiff(Tree treeToCompare, MinigitObjectLoader loader) throws IOException{
         IO.println("The tree " + treeToCompare.miniGitSha1() + " has changed from " + miniGitSha1() + " in the following way:");
         HashMap<Path, String> baseTreeIndex = getIndex(loader);
@@ -198,6 +240,12 @@ public final class Tree extends MiniGitObject implements TreeContent {
         });
     }
 
+    /**
+     * Show all files contained in this tree.
+     *
+     * @param loader The loader to use to load the tree contents.
+     * @throws IOException If building the tree index fails.
+     */
     public void showTreeDiff(MinigitObjectLoader loader) throws IOException {
         IO.println("The tree " + miniGitSha1() + " added:");
         getIndex(loader).forEach((path, hash) -> {
@@ -231,5 +279,39 @@ public final class Tree extends MiniGitObject implements TreeContent {
                 IO.println("Object with specified data is not a blob, even though it should. Repository is corrupted.");
             }
         }
+    }
+
+    /**
+     * Write the serialized tree representation to an output stream.
+     *
+     * @param out The output stream to write to.
+     * @throws IOException If writing to the stream fails.
+     */
+    private void writeToStream(OutputStream out) throws IOException {
+        out.write(TREE_HEADER);
+        for (var entry : contents.entrySet()) {
+            out.write(entry.getValue().hash.getBytes());
+            out.write(' ');
+            out.write(entry.getValue().type.name().getBytes());
+            out.write(' ');
+            out.write(entry.getKey().getBytes());
+            out.write('\n');
+        }
+    }
+
+    /**
+     * Resolve a CWD-relative path to an absolute path and ensure it stays inside the repository.
+     *
+     * @param p The CWD-relative path.
+     * @param loader The loader that provides the repository root path.
+     * @return The absolute normalized path.
+     * @throws IOException If the path escapes the repository.
+     */
+    private Path safeAbsFromCwdRelative(Path p, MinigitObjectLoader loader) throws IOException {
+        Path abs = Path.of("./").toAbsolutePath().resolve(p).normalize();
+        if (!abs.startsWith(loader.getRootPath().toAbsolutePath().normalize())) {
+            throw new IOException("Path escapes repository: " + p);
+        }
+        return abs;
     }
 }
