@@ -15,12 +15,18 @@ public final class CheckoutCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Move to commit/branch/tag";
     }
 
     @Override
     public String help() {
-        return "Checkout a branch, tag or commit data. Update head to point to it. Use ~NUM to move back by number of commits.";
+        return "Checkout a branch, tag or commit data. Update head to point to it. " +
+                "Use ~NUM to move back by number of commits. If you checkout a branch, you start to follow it, otherwise, you move to detached HEAD";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit checkout <branch-name|commit-hash>";
     }
 
     @Override

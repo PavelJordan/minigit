@@ -16,12 +16,17 @@ public final class TreeCheckoutCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Load tree contents into CWD";
     }
 
     @Override
     public String help() {
         return "Checkout a tree object. Provide one hash. HEAD stays - you can rollback commits this way by unstaging based on what you want.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit tree-checkout <tree-hash>";
     }
 
     @Override

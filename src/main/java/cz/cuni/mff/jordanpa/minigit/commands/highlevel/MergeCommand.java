@@ -17,12 +17,17 @@ public final class MergeCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Merge changes from another commit";
     }
 
     @Override
     public String help() {
-        return "Merge the specified branch into the current branch/HEAD. If merging fails, you can then update index to your liking and use merge-apply";
+        return "Merge the specified branch/commit into the current branch/HEAD. If merging fails, you can then update index to your liking and use merge-apply";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit merge <branch-name|commit-hash>";
     }
 
     @Override

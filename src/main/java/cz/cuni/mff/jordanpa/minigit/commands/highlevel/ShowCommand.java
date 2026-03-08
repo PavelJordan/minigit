@@ -26,6 +26,11 @@ public final class ShowCommand implements Command {
     }
 
     @Override
+    public String usage() {
+        return "minigit show <commit-hash|branch-name|tag-name>";
+    }
+
+    @Override
     public int execute(String[] args) {
         if (args.length != 1) {
             IO.println("Incorrect number of arguments. Provide exactly 1 data or name (branch/tag) of commit.");

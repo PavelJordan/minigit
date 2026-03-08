@@ -16,12 +16,17 @@ public final class InitCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Initialize new repository";
     }
 
     @Override
     public String help() {
         return "Creates new repository in the current directory if there is none yet.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit init";
     }
 
     @Override

@@ -18,12 +18,17 @@ public final class AuthorCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "set name and email";
     }
 
     @Override
     public String help() {
         return "Set current author for commits in this repository or multiple repos in project manager dir. Provide name and email.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit author <name> <email>";
     }
 
     @Override

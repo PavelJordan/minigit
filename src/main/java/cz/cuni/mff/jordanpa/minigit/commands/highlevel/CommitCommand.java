@@ -24,12 +24,17 @@ public final class CommitCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Create commit from staged files with one parent";
     }
 
     @Override
     public String help() {
         return "Create a commit with the current index in this repo (or multiple with PM). Its parent will be HEAD, which will be updated to point to the new commit.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit commit <message>";
     }
 
     @Override

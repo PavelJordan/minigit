@@ -16,12 +16,17 @@ public final class TagDeleteCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Delete specified tag";
     }
 
     @Override
     public String help() {
         return "Deletes specified tag in this repo or multiple repos in project manager dir.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit tag-delete <tag-name>";
     }
 
     @Override

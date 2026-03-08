@@ -16,12 +16,18 @@ public final class RestoreStagedCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Remove staged changes";
     }
 
     @Override
     public String help() {
         return "Unstage all changes in this repository, or multiple repos in project manager dir.";
+    }
+
+
+    @Override
+    public String usage() {
+        return "minigit restore-staged <file> [<file> ...]";
     }
 
     @Override

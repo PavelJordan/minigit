@@ -18,12 +18,18 @@ public final class BlobDiffCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Show diff between two blobs";
     }
 
     @Override
     public String help() {
-        return "Show diff of the specified 2 blobs, provided by their hash.";
+        return "Show diff of the specified 2 blobs, provided by their hash. You can find their hashes " +
+                "with the command minigit inspect on commit or tree objects.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit blob-diff <hash1> <hash2>";
     }
 
     @Override

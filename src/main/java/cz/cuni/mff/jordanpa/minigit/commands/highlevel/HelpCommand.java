@@ -24,9 +24,22 @@ public final class HelpCommand implements Command {
     }
 
     @Override
+    public String usage() {
+        return "minigit help [<command>]";
+    }
+
+    @Override
     public int execute(String[] args) {
         try {
             Map<String, Command> plugins = PluginLoader.getLoadedPlugins();
+            if (args.length == 1) {
+                System.out.println("Usage: " + plugins.get(args[0]).usage());
+                System.out.println();
+                System.out.println(plugins.get(args[0]).shortHelp());
+                System.out.println();
+                System.out.println(plugins.get(args[0]).help());
+                return 0;
+            }
             System.out.println("Usage: minigit <command> [<args>]");
             System.out.println("Available commands:");
             plugins.values().stream().sorted(Comparator.comparing(Command::name)).forEach(command -> System.out.println("  " + command.name() + " ".repeat(20 - command.name().length()) + command.shortHelp()));

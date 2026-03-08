@@ -52,7 +52,7 @@ You can then use `minigit tag` to create tags, `minigit restore` to remove unsta
 You can use `minigit projects-init` to initialize a project directory. In here, you can create multiple repositories,
 and use `minigit project-add <repo_root>` to add them (the repositories have to be in sub-directories).
 
-You can use `minigit projects-list` to see the list of repositories and `minigit project-remove` to remove the repositories from the list.
+You can use `minigit projects` to see the list of repositories and `minigit project-remove` to remove the repositories from the list.
 
 When you then use some `minigit` command in this directory, it will apply them to all the repositories in the directory that are added to the list.
 This works for:

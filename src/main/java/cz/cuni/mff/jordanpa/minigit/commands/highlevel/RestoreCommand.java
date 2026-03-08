@@ -21,12 +21,17 @@ public final class RestoreCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Remove unstaged changes";
     }
 
     @Override
     public String help() {
         return "Return the repository (or all repos in project manager) to index state (remove unstaged changes).";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit restore <file> [<file> ...]";
     }
 
     @Override

@@ -23,6 +23,11 @@ public final class ProjectAddCommand implements Command {
     }
 
     @Override
+    public String usage() {
+        return "minigit project-add <path>";
+    }
+
+    @Override
     public int execute(String[] args) {
         if (args.length == 0) {
             System.out.println("Incorrect number of arguments. Provide at least 1 repository path (to their root).");

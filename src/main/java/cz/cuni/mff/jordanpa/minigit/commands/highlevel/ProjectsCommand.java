@@ -23,6 +23,11 @@ public final class ProjectsCommand implements Command {
     }
 
     @Override
+    public String usage() {
+        return "minigit projects";
+    }
+
+    @Override
     public int execute(String[] args) {
         if (args.length != 0) {
             System.out.println("Incorrect number of arguments. Provide no arguments.");

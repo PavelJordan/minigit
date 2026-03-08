@@ -25,6 +25,11 @@ public final class BranchDeleteCommand implements Command {
     }
 
     @Override
+    public String usage() {
+        return "minigit branch-delete <branch-name>";
+    }
+
+    @Override
     public int execute(String[] args) {
         if (args.length != 1) {
             IO.println("Incorrect number of arguments. Provide exactly 1 branch name.");

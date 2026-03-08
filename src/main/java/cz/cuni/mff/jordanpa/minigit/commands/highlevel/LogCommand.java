@@ -29,6 +29,11 @@ public final class LogCommand implements Command {
     }
 
     @Override
+    public String usage() {
+        return "minigit log";
+    }
+
+    @Override
     public int execute(String[] args) {
         try (Scanner scanner = new Scanner(System.in)) {
             IO.println("Press Enter to continue, type anything to quit.");

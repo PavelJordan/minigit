@@ -16,12 +16,18 @@ public final class BlobCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return "Create a new blob object and inserts it into the repository database.";
+        return "Create a new blob object from file";
     }
 
     @Override
     public String help() {
-        return "Usage: minigit blob <file>";
+        return "Create a new blob object from file and inserts it into the repository database. Shows you it's hash. " +
+                "You can then use inspect to see the contents of the blob.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit blob <file>";
     }
 
     @Override

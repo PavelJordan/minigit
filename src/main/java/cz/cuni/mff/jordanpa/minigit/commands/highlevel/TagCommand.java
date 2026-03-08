@@ -16,12 +16,17 @@ public final class TagCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Tag current commit";
     }
 
     @Override
     public String help() {
         return "Create single tag from HEAD with a name in this repo or multiple repos in project manager dir.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit tag <tag-name> [<commit-hash>]";
     }
 
     @Override

@@ -17,12 +17,17 @@ public final class AddIgnoredCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Stage ignored files for deletion.";
     }
 
     @Override
     public String help() {
         return "Stages specified ignored files for deletion. Works well if you want to delete newly ignored files. Works in repos and multiple repos in project manager.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit add-ignored <pattern>";
     }
 
     @Override

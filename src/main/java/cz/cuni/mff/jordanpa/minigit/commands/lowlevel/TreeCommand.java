@@ -17,12 +17,18 @@ public final class TreeCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Save the staged files";
     }
 
     @Override
     public String help() {
-        return "Create a tree object from the staging area (index) and insert it into the repository database.";
+        return "Create a tree object from the staging area (index) and insert it into the repository database. " +
+                "You can now use inspect to see the contents of the tree on its hash.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit tree <directory>";
     }
 
     @Override

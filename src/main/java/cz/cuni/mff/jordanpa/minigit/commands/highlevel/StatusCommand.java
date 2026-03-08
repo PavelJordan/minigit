@@ -20,12 +20,17 @@ public final class StatusCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Show current state";
     }
 
     @Override
     public String help() {
         return "Print the status of the current repository, or all repositories in the project manager.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit status";
     }
 
     @Override

@@ -15,12 +15,17 @@ public final class InspectCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Inspect the hash (commit, tree, blob)";
     }
 
     @Override
     public String help() {
         return "Inspect the repository database for the given data.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit inspect <hash>";
     }
 
     @Override

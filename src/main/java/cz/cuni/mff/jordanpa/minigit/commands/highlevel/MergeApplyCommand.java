@@ -14,12 +14,17 @@ public final class MergeApplyCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Conduct merge from staged files, create merge commit";
     }
 
     @Override
     public String help() {
         return "Apply merge that is currently in progress. Use the index state (staged) as the merge result. Provide message for commit. Will fail if HEAD is different from the merge base.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit merge-apply";
     }
 
     @Override

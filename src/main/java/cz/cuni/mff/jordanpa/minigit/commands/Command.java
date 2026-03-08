@@ -10,5 +10,7 @@ public interface Command {
 
     String help();
 
+    String usage();
+
     int execute(String[] args);
 }

@@ -17,12 +17,17 @@ public final class AddCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "Stage files for commit/merge-apply.";
     }
 
     @Override
     public String help() {
         return "Add/update files into the staging area (index) in repo or all repos in project manager. You can provide list of files to add as arguments.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit add <file> [<file> ...]";
     }
 
     @Override

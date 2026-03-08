@@ -16,12 +16,17 @@ public final class RefsCommand implements Command {
 
     @Override
     public String shortHelp() {
-        return help();
+        return "List all branches and tags";
     }
 
     @Override
     public String help() {
         return "List all branches and tags in this repository or multiple repos in project manager dir.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit refs";
     }
 
     @Override

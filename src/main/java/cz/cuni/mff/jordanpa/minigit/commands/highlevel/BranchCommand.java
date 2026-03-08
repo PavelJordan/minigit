@@ -20,7 +20,12 @@ public final class BranchCommand implements Command {
 
     @Override
     public String help() {
-        return "Create a branch that points to the current commit (HEAD).";
+        return "Create a branch that points to the current commit.";
+    }
+
+    @Override
+    public String usage() {
+        return "minigit branch <branch-name>";
     }
 
     @Override

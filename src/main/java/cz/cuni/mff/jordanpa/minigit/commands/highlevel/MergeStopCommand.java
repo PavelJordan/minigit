@@ -23,6 +23,11 @@ public final class MergeStopCommand implements Command {
     }
 
     @Override
+    public String usage() {
+        return "minigit merge-stop";
+    }
+
+    @Override
     public int execute(String[] args) {
         try {
             Repository repo = Repository.load(Path.of(".minigit"));
