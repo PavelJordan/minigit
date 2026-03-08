@@ -12,6 +12,13 @@ import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
 
+/**
+ * Command that prints the commit log. It also can linearize the commit graph.
+ *
+ * <p>
+ *     It does not work with a project manager - only one repository at a time.
+ * </p>
+ */
 public final class LogCommand implements Command {
     @Override
     public String name() {

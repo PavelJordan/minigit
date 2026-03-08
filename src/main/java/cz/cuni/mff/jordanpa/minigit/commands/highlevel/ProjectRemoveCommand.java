@@ -6,6 +6,9 @@ import cz.cuni.mff.jordanpa.minigit.misc.ProjectManager;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Command that removes a repository from the project manager.
+ */
 public final class ProjectRemoveCommand implements Command {
     @Override
     public String name() {

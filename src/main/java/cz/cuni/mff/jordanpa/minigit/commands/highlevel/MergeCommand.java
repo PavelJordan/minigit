@@ -9,6 +9,18 @@ import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Command that merges the specified branch/commit into the current branch/HEAD.
+ *
+ * <p>
+ *     If it doesn't fail (gracefully), it can either fast-forward, or do nothing and the merge is complete.
+ *     Or, in the case of regular merge, the user then has to merge-apply.
+ * </p>
+ *
+ * <p>
+ *     It does not work with a project manager - only one repository at a time.
+ * </p>
+ */
 public final class MergeCommand implements Command {
     @Override
     public String name() {

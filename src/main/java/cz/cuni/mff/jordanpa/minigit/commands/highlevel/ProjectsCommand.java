@@ -6,6 +6,9 @@ import cz.cuni.mff.jordanpa.minigit.misc.ProjectManager;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Command that lists all repositories registered in the project manager in the current directory.
+ */
 public final class ProjectsCommand implements Command {
     @Override
     public String name() {

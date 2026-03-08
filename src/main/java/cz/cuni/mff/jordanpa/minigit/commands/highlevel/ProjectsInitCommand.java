@@ -6,6 +6,13 @@ import cz.cuni.mff.jordanpa.minigit.misc.ProjectManager;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Command that initializes the projects manager for the current directory.
+ *
+ * <p>
+ *     The directory must not contain .minigit, only the subdirectories.
+ * </p>
+ */
 public final class ProjectsInitCommand implements Command {
     @Override
     public String name() {

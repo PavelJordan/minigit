@@ -8,6 +8,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+/**
+ * Command that unstages all changes in the repository.
+ *
+ * <p>
+ *     Works with a project manager - applies to all repositories in the project.
+ * </p>
+ */
 public final class RestoreStagedCommand implements Command {
     @Override
     public String name() {

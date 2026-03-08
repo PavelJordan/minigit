@@ -12,6 +12,13 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 
+/**
+ * Command that prints the status of the current repository.
+ *
+ * <p>
+ *     Works with a project manager - applies to all repositories in the project.
+ * </p>
+ */
 public final class StatusCommand implements Command {
     @Override
     public String name() {

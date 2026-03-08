@@ -20,6 +20,9 @@ import java.nio.file.Path;
  * <p>
  *     User can specify a number of commits to move back by, e.g. "checkout HEAD~2".
  * </p>
+ * <p>
+ *     It does not work with a project manager - only one repository at a time.
+ * </p>
  */
 public final class CheckoutCommand implements Command {
     private static final String HEAD = "HEAD";

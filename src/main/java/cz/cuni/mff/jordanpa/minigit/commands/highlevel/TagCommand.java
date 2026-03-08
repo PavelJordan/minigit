@@ -8,6 +8,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
+/**
+ * Command that creates a tag from the current commit.
+ *
+ * <p>
+ *     Works with a project manager - applies to all repositories in the project.
+ * </p>
+ */
 public final class TagCommand implements Command {
     @Override
     public String name() {

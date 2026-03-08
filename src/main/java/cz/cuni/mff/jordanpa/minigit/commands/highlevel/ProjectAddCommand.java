@@ -6,6 +6,9 @@ import cz.cuni.mff.jordanpa.minigit.misc.ProjectManager;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Command that adds a repository to the project manager. The user can specify multiple paths. Use the paths to roots.
+ */
 public final class ProjectAddCommand implements Command {
     @Override
     public String name() {

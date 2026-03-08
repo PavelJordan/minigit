@@ -6,6 +6,13 @@ import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Command that applies the merge that is currently in progress. The merge result is the index state (staged files).
+ *
+ * <p>
+ *     It does not work with a project manager - only one repository at a time.
+ * </p>
+ */
 public final class MergeApplyCommand implements Command {
     @Override
     public String name() {

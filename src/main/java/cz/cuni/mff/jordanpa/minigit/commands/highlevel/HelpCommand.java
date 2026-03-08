@@ -6,6 +6,10 @@ import cz.cuni.mff.jordanpa.minigit.commands.PluginLoader;
 import java.util.Comparator;
 import java.util.Map;
 
+/**
+ * Command that prints the help message of all commands.
+ * With a parameter, it prints the help message of the specified command.
+ */
 public final class HelpCommand implements Command {
 
     @Override

@@ -8,6 +8,13 @@ import cz.cuni.mff.jordanpa.minigit.structures.Tree;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Command that loads a tree object into the current working directory.
+ *
+ * <p>
+ *     It does not work with a project manager - only one repository at a time.
+ * </p>
+ */
 public final class TreeCheckoutCommand implements Command {
     @Override
     public String name() {

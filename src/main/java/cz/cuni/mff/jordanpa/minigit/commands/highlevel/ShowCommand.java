@@ -9,6 +9,13 @@ import cz.cuni.mff.jordanpa.minigit.structures.Tree;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Command that shows the differences between the specified commit and its parent.
+ *
+ * <p>
+ *     It does not work with a project manager - only one repository at a time.
+ * </p>
+ */
 public final class ShowCommand implements Command {
     @Override
     public String name() {

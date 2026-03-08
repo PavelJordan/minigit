@@ -12,6 +12,13 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Command that restores the repository to the index state (removes unstaged changes).
+ *
+ * <p>
+ *     Works with a project manager - applies to all repositories in the project.
+ * </p>
+ */
 public final class RestoreCommand implements Command {
 
     @Override
@@ -44,15 +51,22 @@ public final class RestoreCommand implements Command {
             List<Repository> repos = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
             for (Repository repo : repos) {
                 IO.println("Restoring " + repo.getRootPath() + " ...");
+
+                // Get staged files
                 Map<Path, String> trackedFiles = repo.getTrackedFiles();
+
                 for (var entry : trackedFiles.entrySet()) {
                     boolean shouldOverwrite = true;
+
+                    // Test whether the staged file is the same as the current file
                     if (Files.exists(entry.getKey())) {
                         Blob currentBlob = new Blob(entry.getKey());
                         if (currentBlob.miniGitSha1().equals(entry.getValue())) {
                             shouldOverwrite = false;
                         }
                     }
+
+                    // If not, overwrite the file
                     if (shouldOverwrite) {
                         MiniGitObject trackedObject = repo.loadFromInternal(entry.getValue());
                         if (trackedObject instanceof Blob trackedBlob) {
