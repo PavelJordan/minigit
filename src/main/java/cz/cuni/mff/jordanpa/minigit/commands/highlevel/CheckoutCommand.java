@@ -6,6 +6,21 @@ import cz.cuni.mff.jordanpa.minigit.structures.*;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Command that moves the HEAD to the specified commit/branch/commit.
+ *
+ * <p>
+ *     Gracefully fails, if the CWD is dirty (not everything is commited/staged),
+ *     the specified commit does not exist, etc...
+ * </p>
+ * <p>
+ *     User can check out to a branch, following it, or to a commit/tag, detaching the head.
+ *     User can even check out the HEAD, which is useful when moving back via ~.
+ * </p>
+ * <p>
+ *     User can specify a number of commits to move back by, e.g. "checkout HEAD~2".
+ * </p>
+ */
 public final class CheckoutCommand implements Command {
     private static final String HEAD = "HEAD";
     @Override
@@ -38,6 +53,8 @@ public final class CheckoutCommand implements Command {
         try {
             String checkoutTo;
             int moveBackBy;
+
+            // First, resolve if the user wants to move back by some number of commits
             if (args[0].contains("~")) {
                 checkoutTo = args[0].substring(0, args[0].indexOf("~"));
                 moveBackBy = Integer.parseInt(args[0].substring(args[0].indexOf("~") + 1));
@@ -53,11 +70,13 @@ public final class CheckoutCommand implements Command {
 
             Repository repo = Repository.load(Path.of(".minigit"));
 
+            // Ensure the CWD is clean
             if (repo.workingTreeDirty()) {
                 IO.println("Working tree is not clean - cannot checkout.");
                 return 1;
             }
 
+            // If we want to check out to HEAD, we are checking out to the commit hash it points to.
             if (checkoutTo.equals(HEAD)) {
                 checkoutTo = repo.getHeadCommitHash();
                 if (checkoutTo == null) {
@@ -66,12 +85,14 @@ public final class CheckoutCommand implements Command {
                 }
             }
 
+            // Now, ensure, we are pointing to a real commit
             MiniGitObject obj = repo.loadFromInternal(checkoutTo);
             if (!(obj instanceof Commit commit)) {
                 IO.println("Object with specified data or name is not a commit.");
                 return 1;
             }
 
+            // Move back by the specified number of commits
             for (int i = 0; i < moveBackBy; i++) {
                 if (commit.getParents().length != 1) {
                     IO.println("Cannot move back by " + moveBackBy + " commits.");
@@ -86,21 +107,30 @@ public final class CheckoutCommand implements Command {
                     return 1;
                 }
             }
+
+            // Load the tree from the commit we arrived at and check out to it
             MiniGitObject maybeTree = repo.loadFromInternal(commit.getTreeHash());
             if (maybeTree instanceof Tree tree) {
                 repo.checkoutTree(tree);
+
+                // If we are checking out a branch, we start following it.
                 if (repo.isBranch(checkoutTo) && moveBackBy == 0) {
-                    repo.setBranch(checkoutTo, commit.miniGitSha1());
                     repo.setHeadToBranch(checkoutTo);
                     IO.println("Currently at branch " + checkoutTo);
                 }
+
+                // If we are at detached HEAD, we only update the head to the commit we are checking out.
                 else {
                     repo.setHeadToCommit(commit);
                     IO.println("HEAD at detached state");
                 }
+
+                // Save the changes (the HEAD position)
                 repo.save();
+
                 IO.println("Working tree is commit " + commit.miniGitSha1());
             }
+
         } catch (IOException e) {
             IO.println(e);
             return 1;

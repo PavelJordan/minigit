@@ -10,7 +10,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Stage ignored files for deletion.
+ * Stage ignored files for deletion. User can specify multiple paths, and they are perceived as patterns.
  *
  * <p>
  *     Works with a project manager - applies to all repositories in the project.

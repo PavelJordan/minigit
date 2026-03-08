@@ -205,6 +205,12 @@ public final class Tree extends MiniGitObject implements TreeContent {
         });
     }
 
+    /**
+     * Puts the contents of this tree into the current working directory (uses {@link MinigitObjectLoader#getRootPath()} as the root of this tree).
+     * @param loader The loader to use to load the blobs and subtrees.
+     * @throws IOException If the tree cannot be restored (some files cannot be written, or the repository is corrupted.
+     * For example, object headers are not recognized)
+     */
     public void forcedCheckoutTree(MinigitObjectLoader loader) throws IOException {
         for (HashMap.Entry<Path, String> entry : getIndex(loader).entrySet()) {
             MiniGitObject possibleBlobToRestore = loader.loadFromInternal(entry.getValue());

@@ -580,31 +580,55 @@ public final class Repository implements MinigitObjectLoader {
         return Map.copyOf(stagedIndex);
     }
 
+    /**
+     * Checks out a tree.
+     *
+     * <p>
+     *     This means that the repository first checks whether the CWD is clean - no staged/unstaged changes.
+     *     After that check is successful, the tree is checked out - its contents are copied into the CWD.
+     * </p>
+     * @param treeToRestore Tree to put contents from into a file system. Its root has to be equal to this repository root.
+     * @throws IOException If the tree is not in the repository, the CWD is not clean, or writing the files fails.
+     */
     public void checkoutTree(Tree treeToRestore) throws IOException {
         List<FileStatus> statusesStaged = getWorkingToIndexStatus();
         List<FileStatus> statusesCommited = getStagedToLastCommitStatus();
+
+        // Check that the CWD is clean
         if (statusesStaged.stream().anyMatch(status -> status.status() != FileStatusType.SAME && status.status() != FileStatusType.NEW)) {
             throw new IOException("Cannot restore tree. There are unstaged uncommitted changes.");
         }
         if (statusesCommited.stream().anyMatch(status -> status.status() != FileStatusType.SAME && status.status() != FileStatusType.NEW)) {
             throw new IOException("Cannot restore tree. There are staged uncommitted changes.");
         }
+
         Tree CurrentRoot = Tree.buildTree(stagedIndex, mainRepoPath).getLast();
+
+        // Check that the tree is in the repository
         if (loadFromInternal(CurrentRoot.miniGitSha1()) == null) {
             throw new IOException("Cannot restore tree. Current root tree is not in repository. Use tree command to build it.");
         }
+
+        // If the tree is already checked out, do nothing (which means the current index is the same as the tree index)
         if (CurrentRoot.miniGitSha1().equals(treeToRestore.miniGitSha1())) {
             IO.println("Tree is already checked out.");
             return;
         }
+
+        // Delete all files in the CWD that are currently tracked (committed in the last commit - we can retrieve them later,
+        // but it might not be in the tree we are checking out - we want to have only the new files)
         for (FileStatus status : statusesStaged.stream().filter(s -> s.status() == FileStatusType.SAME).toList()) {
             if (status.status() == FileStatusType.SAME) {
                 IO.println("Deleting tracked file " + status.path());
                 Files.delete(safeAbsFromCwdRelative(status.path()));
             }
         }
+
+        // Set new staged files (so they now match the tree)
         stagedIndex = treeToRestore.getIndex(this);
         IO.println("Restoring tree...");
+
+        // Put the tree contents into the CWD (root being the repo root)
         treeToRestore.forcedCheckoutTree(this);
     }
 
@@ -618,14 +642,31 @@ public final class Repository implements MinigitObjectLoader {
         return getFileStatusesFromComparison(workingDirIndex, stagedIndex);
     }
 
+    /**
+     * Set HEAD to the specified commit, resulting in its DETACHED state.
+     * @param commit The commit to set HEAD to. The commit must be in the repository database
+     *               (so, use the {@link #storeInternally(MiniGitObject)} method to save it there if the commit is new).
+     */
     public void setHeadToCommit(Commit commit) {
         head = new Head(Head.Type.COMMIT, commit.miniGitSha1());
     }
 
+    /**
+     * Set HEAD to the specified branch, resulting in HEAD following that branch.
+     * @param checkoutTo The branch to set HEAD to. If the branch does not exist, nothing happens.
+     */
     public void setHeadToBranch(String checkoutTo) {
+        if (!branches.containsKey(checkoutTo)) {
+            return;
+        }
         head = new Head(Head.Type.BRANCH, checkoutTo);
     }
 
+    /**
+     * Check whether a branch with the specified name exists.
+     * @param name The name of the branch to check.
+     * @return True if the branch exists, false otherwise.
+     */
     public boolean isBranch(String name) {
         return branches.containsKey(name);
     }

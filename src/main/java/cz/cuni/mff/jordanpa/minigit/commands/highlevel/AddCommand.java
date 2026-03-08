@@ -10,8 +10,11 @@ import java.nio.file.Path;
 import java.util.*;
 
 /**
- * Command to add files to the staging area (index).
+ * Command to add files (patterns) to the staging area (index).
  *
+ * <p>
+ *     User can even provide a list of files to add. The paths are supposed to be "patterns", rather than actual paths.
+ * </p>
  * <p>
  *     Works with a project manager - applies to all repositories in the project.
  * </p>
