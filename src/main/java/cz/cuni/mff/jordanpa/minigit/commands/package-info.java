@@ -1,0 +1,1 @@
+package cz.cuni.mff.jordanpa.minigit.commands;

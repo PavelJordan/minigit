@@ -1,0 +1,42 @@
+<html lang="en">
+    <body>
+        <h1>MiniGit API documentation - javadoc</h1>
+        <h2>Introduction</h2>
+        <p>
+            MiniGit is a git clone coded in java with the main git functionality implemented.
+            It also supports multiple minigit-repository handling (i.e., add/commit/tag/branch... are called on multiple repositories at the same time).
+            This is a home program project for the Java programming course nprg013 at CUNI for the academic year 2025/26.
+            It handles the main git commands like <code>add</code>, <code>commit</code>, <code>checkout</code>, <code>merge</code>, <code>status</code> <code>log</code>, and more,
+            effectively implementing three-way merge and immutable git-like objects storage with blobs, trees, and commits.
+        </p>
+        <h2>Architecture</h2>
+        <p>
+            After loading the commands through ServiceLoader, the main class finds the appropriate command based on the first argument and executes it
+            with the rest of the arguments. The command then uses the minigit structures to perform the necessary operations. You can see
+            both commands and structures packages below.
+        </p>
+        <h2>Main packages</h2>
+        <ul>
+            <li><code>cz.cuni.mff.jordanpa.minigit.commands</code> - CLI command implementations loaded through ServiceLoader</li>
+            <li><code>cz.cuni.mff.jordanpa.minigit.structures</code> - repository structures with their business logic</li>
+            <li><code>cz.cuni.mff.jordanpa.minigit.misc</code> - helper classes and algorithms, including diff and merge support, <code>Author</code> and <code>FileHelper</code></li>
+        </ul>
+        <h2>Persistence</h2>
+        <p>
+            MiniGit stores immutable repository objects in the <code>.minigit/objects</code>
+            directory and addresses them by SHA-1 hash (first two letters are subdirectory, the rest are the files themselves).
+            Other types of objects are mutable references (branches, tags, HEAD, index), and those are saved alongside the "objects" directory.
+            If you want to understand more, read the programmer documentation in the <code>docs</code> directory.
+        </p>
+        <h2>Where to continue</h2>
+        <p>
+            <b>I HIGHLY RECOMMEND READING THE PROGRAMMER DOCUMENTATION IN THE <code>docs</code> DIRECTORY</b>. It gives you
+            a good overview of the technology used in MiniGit and how to understand the code. It then directly
+            explains what to read/study next, and you will then be able to start contributing to the project.
+        </p>
+        <p>
+            This website is a reference for the API documentation. You use it to have a clear picture of what is the exact behavior of the methods and classes
+            and to have a quick overview of all the possible classes/methods. The programmer documentation provides a bigger picture for the architecture.
+        </p>
+    </body>
+</html>
