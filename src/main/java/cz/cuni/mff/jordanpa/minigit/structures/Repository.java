@@ -13,15 +13,23 @@ import java.util.*;
 import static cz.cuni.mff.jordanpa.minigit.misc.FileHelper.getFileStatusesFromComparison;
 
 /**
- * A MiniGit repository with its mutable state and access to the immutable object database.
+ * Represents a MiniGit repository with its mutable state and access to the immutable object database.
  *
  * <p>
- *     The repository keeps the currently loaded runtime data, such as HEAD, staged index,
- *     references, author, and merging state. It also provides the main operations used by commands.
+ *     The repository manages the currently loaded runtime data, such as HEAD, staged index,
+ *     references, current author, ignored files, and merging state. It also provides the main
+ *     operations used by commands.
+ * </p>
+ * <p>
+ *     While blobs, trees, and commits form the immutable persistent core of MiniGit,
+ *     Repository provides the mutable layer above them.
  * </p>
  */
 public final class Repository implements MinigitObjectLoader {
 
+    /**
+     * Type of change between two compared versions of a file.
+     */
     public enum FileStatusType {
         SAME,
         MODIFIED,
@@ -29,9 +37,23 @@ public final class Repository implements MinigitObjectLoader {
         NEW
     }
 
+    /**
+     * Result of starting or performing a merge.
+     */
     public enum MergeStatus {
+        /**
+         * The merge was started, but conflicts were detected and must be resolved manually.
+         */
         CONFLICT,
+
+        /**
+         * The merge was successfully applied.
+         */
         APPLIED,
+
+        /**
+         * The merge could not be started or completed because the input/state was invalid.
+         */
         INVALID,
     }
 

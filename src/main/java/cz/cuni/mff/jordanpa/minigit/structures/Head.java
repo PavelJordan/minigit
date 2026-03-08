@@ -23,12 +23,23 @@ import java.util.HashMap;
  * @param data garbage when UNSET, hash of the commit when detached, name of the branch when following
  */
 public record Head(Type type, String data) {
+
+    /**
+     * Type of the HEAD pointer - following branch, detached to commit, or UNSET.
+     */
     public enum Type {
         BRANCH,
         COMMIT,
         UNSET
     }
 
+    /**
+     * Load HEAD from its file.
+     *
+     * @param path The path to the HEAD file.
+     * @return The loaded HEAD, or UNSET if the file does not exist.
+     * @throws IOException If the HEAD file is corrupted or cannot be read.
+     */
     public static Head loadHead(Path path) throws IOException {
         if  (Files.notExists(path)) {
             return new Head(Type.UNSET, null);
@@ -43,6 +54,12 @@ public record Head(Type type, String data) {
         }
     }
 
+    /**
+     * Save HEAD into its file.
+     *
+     * @param path The path to the HEAD file.
+     * @throws IOException If writing fails.
+     */
     public void write(Path path) throws IOException {
         try(var out = Files.newBufferedWriter(path)) {
             out.write(type.name() + "\n");
@@ -52,6 +69,17 @@ public record Head(Type type, String data) {
         }
     }
 
+    /**
+     * Get the index of the commit pointed to by this HEAD.
+     *
+     * <p>
+     *     If the HEAD is UNSET, an empty index is returned.
+     * </p>
+     *
+     * @param loader The loader to use to load the commit and its tree.
+     * @return Map "path -> blob hash" of the commit pointed to by this HEAD.
+     * @throws IOException If the pointed commit or tree cannot be restored.
+     */
     public HashMap<Path, String> getCommitIndex(MinigitObjectLoader loader) throws IOException {
         String hash;
         if (type() == Head.Type.BRANCH) {

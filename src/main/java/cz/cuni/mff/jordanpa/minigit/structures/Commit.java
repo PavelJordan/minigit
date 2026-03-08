@@ -28,8 +28,13 @@ public final class Commit extends MiniGitObject {
     private final String message;
     private final Author author;
     private final Date date;
+    /**
+     * Cached SHA-1 hash of this commit.
+     */
     private String sha1;
     public final String AUTHOR_HEADER = "AUTHOR";
+
+    private static final DateFormat DATE_FORMAT = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
 
     /**
      * Creates a new commit.
@@ -44,14 +49,6 @@ public final class Commit extends MiniGitObject {
         this.message = message;
         this.author = author;
         this.date = date;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof Commit c) {
-            return c.Snapshot == Snapshot && Arrays.equals(c.parents, parents) && c.message.equals(message) && c.author.equals(author) && c.date.equals(date) && c.miniGitSha1().equals(miniGitSha1());
-        }
-        return false;
     }
 
     /**
@@ -70,25 +67,31 @@ public final class Commit extends MiniGitObject {
         this.date = date;
     }
 
-    public String [] getParents() {
-        return Arrays.copyOf(parents, parents.length);
-    }
-
+    /**
+     * Build a commit from its internal byte representation.
+     *
+     * @param byteArray byte representation of the commit, without the commit header.
+     */
     Commit(byte[] byteArray) {
         try(Scanner scanner = new Scanner(new ByteArrayInputStream(byteArray))) {
             this.Snapshot = scanner.nextLine();
             String nextLine = scanner.nextLine();
             List<String> parents = new ArrayList<>();
+
+            // Read all parents until the author header is found.
             while (!nextLine.equals(AUTHOR_HEADER)) {
                 parents.add(nextLine);
                 nextLine = scanner.nextLine();
             }
             this.parents = parents.toArray(new String[0]);
+
             String authorName = scanner.nextLine();
             String authorEmail =  scanner.nextLine();
             this.author = new Author(authorName, authorEmail);
+
             String dateStr = scanner.nextLine();
             this.date = DATE_FORMAT.parse(dateStr);
+
             StringBuilder sb = new StringBuilder();
             if (scanner.hasNextLine()) {
                 sb.append(scanner.nextLine());
@@ -100,14 +103,13 @@ public final class Commit extends MiniGitObject {
         }
     }
 
-    @Override
-    void write(Path path) throws IOException {
-        writeBytes(getFileBytes(), path);
-    }
-
-    @Override
-    public String getDescription() {
-        return getAnnotatedDescription(Collections.emptyMap(), Collections.emptyMap(), null, "");
+    /**
+     * Get the parent commit hashes.
+     *
+     * @return Copy of the array of parent commit hashes.
+     */
+    public String [] getParents() {
+        return Arrays.copyOf(parents, parents.length);
     }
 
     /**
@@ -167,14 +169,66 @@ public final class Commit extends MiniGitObject {
         return sha1;
     }
 
+    /**
+     * Write this commit in its internal MiniGit object format to the given path.
+     *
+     * @param path destination path inside MiniGit object storage.
+     * @throws IOException if writing fails.
+     */
+    @Override
+    void write(Path path) throws IOException {
+        writeBytes(getFileBytes(), path);
+    }
+
+    /**
+     * Get a human-readable description of this commit.
+     *
+     * @return textual description of this commit.
+     */
+    @Override
+    public String getDescription() {
+        return getAnnotatedDescription(Collections.emptyMap(), Collections.emptyMap(), null, "");
+    }
+
+    /**
+     * Get the hash of the root tree this commit points to.
+     *
+     * @return hash of the tree object this commit refers to.
+     */
+    public String getTreeHash() {
+        return Snapshot;
+    }
+
+    /**
+     * Compare this commit to another object.
+     *
+     * @param o the object to compare this commit to.
+     * @return true if the objects are equal, false otherwise.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof Commit c) {
+            return Objects.equals(c.Snapshot, Snapshot) && Arrays.equals(c.parents, parents) && c.message.equals(message) && c.author.equals(author) && c.date.equals(date) && c.miniGitSha1().equals(miniGitSha1());
+        }
+        return false;
+    }
+
+    /**
+     * Serialize this commit into its internal byte representation, including the commit header.
+     *
+     * @return byte representation of this commit.
+     */
     private byte[] getFileBytes() {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             out.write(COMMIT_HEADER);
             out.write(Snapshot.getBytes());
+
+            // Parents are written one per line after the snapshot hash.
             for (String parent : parents) {
                 out.write('\n');
                 out.write(parent.getBytes());
             }
+
             out.write(("\n" + AUTHOR_HEADER + "\n").getBytes());
             out.write(author.name().getBytes());
             out.write('\n');
@@ -187,11 +241,5 @@ public final class Commit extends MiniGitObject {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static final DateFormat DATE_FORMAT = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
-
-    public String getTreeHash() {
-        return Snapshot;
     }
 }

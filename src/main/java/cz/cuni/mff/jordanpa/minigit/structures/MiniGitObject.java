@@ -9,7 +9,13 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * Represents a MiniGit object - blob, tree, or commit.
+ * Represents an immutable MiniGit object - blob, tree, or commit.
+ *
+ * <p>
+ *     MiniGit objects are identified by their SHA-1 hash and stored in the internal object database.
+ *     Blobs represent file contents, trees represent directory structure, and commits represent snapshots
+ *     together with their metadata.
+ * </p>
  */
 public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob, Tree, Commit {
     protected static final byte[] BLOB_HEADER =   "[[blob]]..".getBytes();
@@ -17,6 +23,19 @@ public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob,
     protected static final byte[] COMMIT_HEADER = "[[commit]]".getBytes();
     protected static final int HEADER_SIZES = BLOB_HEADER.length;
 
+    /**
+     * Load an object from the internal object database based on its hash.
+     *
+     * <p>
+     *     The object type is recognized from its header, and the corresponding concrete
+     *     {@link MiniGitObject} subtype is created.
+     * </p>
+     *
+     * @param objectsPath Path to the objects directory.
+     * @param hash Hash of the object to load.
+     * @return The loaded object, or null if it does not exist.
+     * @throws IOException If the object has an unknown header or cannot be read.
+     */
     public static MiniGitObject getObjectBasedOnHash(Path objectsPath, String hash) throws IOException {
         Path objPath = objectsPath.resolve(Path.of(hash.substring(0, 2), hash.substring(2)));
         if (!Files.exists(objPath)) {
@@ -40,11 +59,24 @@ public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob,
         throw new IOException("Unknown object type: {" + new String(header) + "]}.");
     }
 
+    /**
+     * Save the specified object into the internal object database based on its hash.
+     *
+     * @param objectsPath Path to the objects directory.
+     * @param obj The object to save.
+     * @throws IOException If writing the object fails.
+     */
     static void saveObjectBasedOnHash(Path objectsPath, MiniGitObject obj) throws IOException {
         Path objPath = objectsPath.resolve(Path.of(obj.miniGitSha1().substring(0, 2), obj.miniGitSha1().substring(2)));
         obj.write(objPath);
     }
 
+    /**
+     * Write this object in its internal MiniGit representation to the specified path.
+     *
+     * @param path The path to write the object to.
+     * @throws IOException If writing fails.
+     */
     abstract void write(Path path) throws IOException;
 
     /**
@@ -59,6 +91,12 @@ public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob,
      */
     public abstract String getDescription();
 
+    /**
+     * Compute the SHA-1 hash of the specified bytes.
+     *
+     * @param bytes The bytes to hash.
+     * @return The SHA-1 hash as a hexadecimal string.
+     */
     protected String getSha1FromBytes(byte[] bytes) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
@@ -69,6 +107,13 @@ public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob,
         }
     }
 
+    /**
+     * Write the specified bytes to the specified file, unless it already exists.
+     *
+     * @param bytes The bytes to write.
+     * @param path The file path to write to.
+     * @throws IOException If writing fails.
+     */
     protected void writeBytes(byte[] bytes, Path path) throws IOException{
         if (Files.exists(path)) {
             return;

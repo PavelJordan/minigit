@@ -452,3 +452,7 @@ public final class AddCommand implements Command {
 
 That's it! Go over the rest of the commands, and you will understand how everything works. If you ever get confused,
 look into the Javadocs of the MiniGit classes.
+
+ChatGPT wrote about 1/4–1/2 of the in-code Javadocs, after giving him all my other manually
+written Javadocs and the user manual + programmer documentation written by me. I then carefully walked through
+the generated Javadocs and made sure that they were correct and not missing any ideas.

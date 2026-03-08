@@ -3,6 +3,18 @@ package cz.cuni.mff.jordanpa.minigit.structures;
 import java.io.IOException;
 import java.nio.file.Path;
 
+/**
+ * Interface for loading objects from the internal database, with references and some root path.
+ *
+ * <p>
+ *     This is a form of abstraction above Repository. Allows for mocks
+ *     (like {@link cz.cuni.mff.jordanpa.minigit.structures.mocks.MockRepoWithTrees})
+ * </p>
+ * <p>
+ *     Also, this abstraction forces better code quality in other minigit structures, as they have to use
+ *     only these methods.
+ * </p>
+ */
 public interface MinigitObjectLoader {
     /**
      * Loads the object from the internal database with the specified hash. The implementation depends on a concrete class.
