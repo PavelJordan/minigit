@@ -45,11 +45,11 @@ public final class TreeCommand implements Command {
             }
             Repository repo = Repository.load(Path.of(".minigit"));
 
-            // Get the staged files (also named tracked files)
+            // Get the staged files (also named tracked files). As they are staged, they are already saved.
             Map<Path, String> trackedFiles = repo.getTrackedFiles();
 
             // Build the tree to save (includes the subtrees needed)
-            // The runtime trees will have CWD-relative addresses, the file-saved trees relative to the repo root path.
+            // The root path specifies which tree should be the root tree, so when saved, it suits the repository root.
             List<Tree> trees = Tree.buildTree(trackedFiles, repo.getRootPath());
 
             // Print the hashes of all the trees. The last tree will be the root.

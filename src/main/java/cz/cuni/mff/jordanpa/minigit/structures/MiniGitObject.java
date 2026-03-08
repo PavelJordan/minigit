@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  * Represents a MiniGit object - blob, tree, or commit.
@@ -45,6 +46,17 @@ public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob,
     }
 
     abstract void write(Path path) throws IOException;
+
+    /**
+     * Returns a human-readable description of this object. For blob, it prints out contents, for trees, its contents and their types,
+     * and for commits, its message and parent hashes. For commits, though, it is better to use {@link Commit#getAnnotatedDescription(Map, Map, Head, String)}.
+     *
+     * <p>
+     *     This method is intended mainly for inspection and debugging.
+     * </p>
+     *
+     * @return textual description of the {@link MiniGitObject} and its contents
+     */
     public abstract String getDescription();
 
     protected String getSha1FromBytes(byte[] bytes) {

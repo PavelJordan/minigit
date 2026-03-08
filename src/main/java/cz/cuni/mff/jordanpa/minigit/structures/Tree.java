@@ -67,8 +67,19 @@ public final class Tree extends MiniGitObject implements TreeContent {
     }
 
     /**
-     * Create a new tree with the specified structure. The files (blobs) and trees must be saved in the database manually!
-     * The last tree in the list is the root tree.
+     * Create a new tree with the specified structure.
+     *
+     * <p>
+     *     The files (blobs) and trees must be saved in the database manually;
+     *     otherwise the saved trees will point to non-existing objects, after saving to the file system.
+     * </p>
+     *
+     * @param filesToBuild The files to build the tree from.
+     * @param root The root directory. All paths, as will be saved into the filesystem, will be relative to this directory.
+     *             You want this to be the root of the repository where the tree is built,
+     *             so the root-tree will have the files and directories in the root directory.
+     *
+     * @return All the trees in the tree hierarchy, the last one being the root tree.
      */
     public static LinkedList<Tree> buildTree(Map<Path, String> filesToBuild, Path root) {
         HashMap<Path, String> files = new HashMap<>();

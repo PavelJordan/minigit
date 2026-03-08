@@ -9,6 +9,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 
+/**
+ * Command to add files to the staging area (index).
+ *
+ * @apiNote Works with a project manager - applies to all repositories in the project.
+ */
 public final class AddCommand implements Command {
     @Override
     public String name() {
@@ -38,17 +43,27 @@ public final class AddCommand implements Command {
         }
         try {
             List<Repository> reposHere = ProjectManager.loadSingleRepoOrReposFromManager(Path.of("./"));
+
+            // Iterate over all repositories in the project manager (or a single repository if there is no project manager)
             for (Repository repo : reposHere) {
                 IO.println("Updating " + repo.getRootPath() + " ...");
+
+                // Get ignored files from the repository (.minigitignore file)
                 List<String> toIgnore = repo.getIgnored();
+
+                // Filter out ignored files from the list of files to add
                 for (String pattern : args) {
                     for (Path file: FileHelper.getAllFiles(Path.of(pattern), toIgnore)) {
+
+                        // Add the file to the index (staged file)
                         boolean successful = repo.addToIndex(file);
                         if (successful) {
                             IO.println("Staging " + file + "...");
                         }
                     }
                 }
+
+                // Save the list of staged files
                 repo.save();
                 IO.println("Done.");
             }

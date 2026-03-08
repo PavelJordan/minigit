@@ -64,15 +64,6 @@ public final class Blob extends MiniGitObject implements TreeContent {
         }
     }
 
-    /**
-     * Returns a human-readable description of this blob.
-     *
-     * <p>
-     *     This method is intended mainly for inspection and debugging.
-     * </p>
-     *
-     * @return textual description of the blob and its contents
-     */
     @Override
     public String getDescription() {
         return "Object:\nblob\nContent:\n" + new String(content);

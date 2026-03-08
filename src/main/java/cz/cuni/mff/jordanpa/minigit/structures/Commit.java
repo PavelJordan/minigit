@@ -110,6 +110,20 @@ public final class Commit extends MiniGitObject {
         return getAnnotatedDescription(Collections.emptyMap(), Collections.emptyMap(), null, "");
     }
 
+    /**
+     * Get the description of this commit, but also consider branches, tags, current head, and indent before the info.
+     *
+     * <p>
+     *     The additional data allows for a suitable commit description in the log messages.
+     *     You can also see the commit hash, the root tree hash, Author, date, message and parents.
+     * </p>
+     *
+     * @param branchNameToHash Branches, so they can be shown if they point to this commit.
+     * @param tagNameToHash Tags, so they can be shown if they point to this commit.
+     * @param head Head, so it can be shown if it is pointing to this commit.
+     * @param indent The indentation before the commit information (before each line)
+     * @return The string (description) of this commit, you can print it to the console.
+     */
     public String getAnnotatedDescription(Map<String, String> branchNameToHash, Map<String, String> tagNameToHash, Head head, String indent) {
         String hashStr = indent + "Commit Hash: " + miniGitSha1();
         StringBuilder hashStrEnd = new StringBuilder();

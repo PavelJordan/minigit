@@ -259,15 +259,28 @@ public final class Repository implements MinigitObjectLoader {
         tags.remove(tagName);
     }
 
+    /**
+     * Load the repository from the given path (that should be the .minigit folder).
+     *
+     * @param loadFrom The .minigit folder of the repository.
+     * @return The repository object.
+     * @throws IOException If the repository does not exist, or some other files are corrupted.
+     * @implNote The repository files are lazy-loaded from disk, where possible - so this is rather quick.
+     * @apiNote Searches up to 10 parent directories for the repository if the loadFrom is not .minigit folder.
+     */
     public static Repository load(Path loadFrom) throws IOException {
+        // Search in parent directories
         final int toSearch = 10;
         for (int i = 0; !Files.exists(loadFrom) && i < toSearch; i++) {
             loadFrom = Path.of("../").resolve(loadFrom).normalize();
         }
+
         if (!Files.exists(loadFrom)) {
             throw new IOException("Repository does not exist. Searched up to " + loadFrom);
         }
+
         Repository repo = new Repository(loadFrom);
+
         repo.loadHead();
         repo.loadRef();
         repo.loadIndex();
@@ -277,15 +290,41 @@ public final class Repository implements MinigitObjectLoader {
         return repo;
     }
 
+    /**
+     * Set up the MiniGitObject to be stored in the repository.
+     *
+     * <p>
+     *     The objects are saved in a map - the key is its hash.
+     *     If the hash already exists, the object is not stored.
+     * </p>
+     *
+     * @param obj The object to store.
+     * @apiNote The object is saved into the file system only after the {@link #save()} method is called.
+     */
     public void storeInternally(MiniGitObject obj) {
         if (!objects.containsKey(obj.miniGitSha1())) {
             objects.put(obj.miniGitSha1(), obj);
         }
     }
 
+    /**
+     * Load an object with the specified hash or name.
+     *
+     * <p>
+     *     If the name exists, it first retrieves the hash corresponding to that branch/tag.
+     *     Otherwise, it loads the object with that hash directly. You can then use `instanceof` to check the type of the object loaded.
+     *     Once loaded, the next `loadFromInternal` with the same hash only returns the object from the runtime map.
+     * </p>
+     *
+     * @param hashOrName The hash or name (branch/tag) of the object to load.
+     * @return The object, or null if it does not exist.
+     * @throws IOException If the repository is corrupted - for example, the object file has an unknown header.
+     * @implNote As the objects on the disks have repo-relative paths, the returned object contains a path converted to CWD-relative path.
+     */
     public MiniGitObject loadFromInternal(String hashOrName) throws IOException {
         String hash;
 
+        // Resolve name
         if (branches.containsKey(hashOrName)) {
             hash = branches.get(hashOrName);
         }
@@ -294,6 +333,7 @@ public final class Repository implements MinigitObjectLoader {
         }
 
         if (!objects.containsKey(hash)) {
+            // The object was not yet loaded
             try {
                 MiniGitObject obj = MiniGitObject.getObjectBasedOnHash(objectsPath, hash);
                 objects.put(hash, obj);
@@ -304,16 +344,39 @@ public final class Repository implements MinigitObjectLoader {
                 return null;
             }
         }
+
         return objects.get(hash);
     }
 
+    /**
+     * Save the index, head, references (branches and tags), current author merging information and all objects
+     * set up through {@link #storeInternally(MiniGitObject)} to the disk.
+     *
+     * <p>
+     *     Creates all necessary files for the directory, including creating the .minigit folder if it does not exist.
+     * </p>
+     *
+     * @throws IOException in the case you don't have the permissions, or some files are corrupted (for example,
+     * they are already directories with the same name).
+     *
+     * @apiNote If you don't call this method, the changes you made in other methods will not be saved.
+     * Only the user files in repo will stay (in the case you checked out a commit, for example).
+     *
+     * @implNote The files are saved with repo-relative paths, whereas the runtime-representation is CWD relative paths.
+     */
     public void save() throws IOException {
+
+        // Ensure we have .minigit folder and .minigit/objects folder.
         if (!Files.exists(objectsPath)) {
-            Files.createDirectory(objectsPath);
+            Files.createDirectories(objectsPath);
         }
+
+        // save objects
         for (Map.Entry<String, MiniGitObject> obj : objects.entrySet()) {
             MiniGitObject.saveObjectBasedOnHash(objectsPath, obj.getValue());
         }
+
+        // save mutable data
         saveIndex();
         saveHead();
         saveRef();
@@ -321,18 +384,38 @@ public final class Repository implements MinigitObjectLoader {
         saveMerging();
     }
 
+    /**
+     * Add the specified file into the staged files list (index).
+     *
+     * <p>
+     *     The staged files list (index) contains relative paths to CWD at runtime,
+     *     while, in the file system, the paths are repo-relative (once you call {@link #save()}.
+     *     If the file does not exist, it is deleted from the index (if it was there).
+     *     Also saves the file as a blob into the repository database (again, commited via {@link #save()}, otherwise it would be lost).
+     * </p>
+     *
+     * @param file To add to the index.
+     * @return Whether the file was added to the index/removed from the index successfully. Prints an error message if some IO exception occurs.
+     * @apiNote Works only if the file is in the repository root path/subpath
+     */
     public boolean addToIndex(Path file) {
+
         // Ignore files not belonging to the repository - useful when working with multiple repositories.
         if (!isInRepo(file)) {
             return false;
         }
+
         try {
-        Path abs = safeAbsFromCwdRelative(file.normalize());
-        Path normalized = cwdAbsPath().relativize(abs).normalize();
+            Path abs = safeAbsFromCwdRelative(file.normalize());
+            Path normalized = cwdAbsPath().relativize(abs).normalize();
+
+            // If the file is not in the file system, try to delete it from the index
             if (!Files.exists(abs) || FileHelper.isExcluded(normalized, getIgnored())) {
                 stagedIndex.remove(normalized);
                 return true;
             }
+
+            // If the file is in the file system, the blob is created, staged, and saved.
             Blob blob = new Blob(abs);
             stagedIndex.put(normalized, blob.miniGitSha1());
             storeInternally(blob);
@@ -451,6 +534,7 @@ public final class Repository implements MinigitObjectLoader {
     /**
      * Get the index (the tracked files/staged files) in this repository.
      * @return Copy of the map "path -> blob hash".
+     * @apiNote As the files are staged, their blobs are already saved.
      */
     public Map<Path, String> getTrackedFiles(){
         return Map.copyOf(stagedIndex);
@@ -562,7 +646,11 @@ public final class Repository implements MinigitObjectLoader {
 
     private final List<String> ignored = new ArrayList<>();
 
-    public List<String> getIgnored() throws IOException {
+    /**
+     * Get the list of ignored patterns, as loaded from the.minigitignore file, including the by-default ignored .minigit folder.
+     * @return The list of ignored patterns
+     */
+    public List<String> getIgnored() {
         return ignored;
     }
 

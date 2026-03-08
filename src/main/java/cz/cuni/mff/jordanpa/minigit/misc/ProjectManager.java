@@ -116,18 +116,39 @@ public final class ProjectManager {
         return Files.exists(path.resolve(PROJECT_MANAGER_FILE_NAME));
     }
 
+    /**
+     * Load multiple repositories from the project manager, or a single repository from root/under repository.
+     *
+     * <p>
+     *     First, if this is a directory with a project manager, load all repositories from the project manager.
+     *     Otherwise, try to load a single repository if this path contains it
+     *     (the .minigit folder, or if the .minigit folder is in the parent folders).
+     * </p>
+     * @param path Path to the folder with a project manager to load repositories from,
+     *             or to search for repositories in (or parent folders)
+     * @return List of repositories to apply commands to if something is invoked in this path.
+     * @throws IOException If no repository is found, or some data is corrupted.
+     */
     public static List<Repository> loadSingleRepoOrReposFromManager(Path path) throws IOException {
         ArrayList<Repository> repos = new ArrayList<>();
+
+        // Project manager found
         if (ProjectManager.isPresent(path)) {
+
             IO.println("Project manager found in " + path.resolve(PROJECT_MANAGER_FILE_NAME).normalize());
             ProjectManager pm = ProjectManager.load(path);
+
+            // Load all repositories from the project manager
             for (Path repo : pm.getProjects()) {
                 repos.add(Repository.load(repo.resolve(".minigit")));
             }
         }
+
+        // Project manager not found, try to load a single repository here or in parent folders
         else {
             repos.add(Repository.load(Path.of(".minigit")));
         }
+
         return repos;
     }
 }
