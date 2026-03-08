@@ -22,12 +22,30 @@ import static cz.cuni.mff.jordanpa.minigit.misc.FileHelper.getFileStatusesFromCo
  */
 public final class Tree extends MiniGitObject implements TreeContent {
 
-    public enum TreeEntryType { BLOB, TREE }
+    /**
+     * Type of tree entry.
+     */
+    public enum TreeEntryType {
+        /**
+         * A file in the repository.
+         */
+        BLOB,
+        /**
+         * A folder in the repository.
+         */
+        TREE
+    }
+
+    /**
+     * Represents one tree entry
+     * @param hash The hash of the object this entry refers to.
+     * @param type The type of the entry.
+     */
 
     public record TreeEntry(String hash, TreeEntryType type) {}
 
     /**
-     * Map name -> data + type of tree content.
+     * Map name -> hash + type of tree content.
      */
     private final SortedMap<String, TreeEntry> contents = new TreeMap<>();
 
@@ -65,6 +83,8 @@ public final class Tree extends MiniGitObject implements TreeContent {
     }
 
     /**
+     * Retrieve the contents of this tree.
+     *
      * @return A copy of the map "name -> tree entry".
      */
     public Map<String, TreeEntry> getContents() {

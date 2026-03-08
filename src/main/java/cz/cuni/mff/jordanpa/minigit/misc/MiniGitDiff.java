@@ -20,6 +20,11 @@ import java.util.List;
 public final class MiniGitDiff {
 
     /**
+     * Private constructor to prevent instantiation.
+     */
+    private MiniGitDiff() {}
+
+    /**
      * Result of a diff operation.
      * @param replaceFrom 0-based index of the first line to replace
      * @param replaceTo 0-based index of the last line to replace

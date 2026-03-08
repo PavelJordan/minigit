@@ -17,6 +17,11 @@ import java.util.Map;
  * </p>
  */
 public final class TreeCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public TreeCommand() {}
+
     @Override
     public String name() {
         return "tree";

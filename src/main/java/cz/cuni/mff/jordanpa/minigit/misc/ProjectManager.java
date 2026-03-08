@@ -107,6 +107,8 @@ public final class ProjectManager {
     }
 
     /**
+     * Get all projects managed by this project manager.
+     *
      * @return Copy the list of managed project paths and return it.
      */
     public List<Path> getProjects() {

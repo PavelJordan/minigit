@@ -14,6 +14,11 @@ import java.nio.file.Path;
  * </p>
  */
 public final class MergeApplyCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public MergeApplyCommand() {}
+
     @Override
     public String name() {
         return "merge-apply";

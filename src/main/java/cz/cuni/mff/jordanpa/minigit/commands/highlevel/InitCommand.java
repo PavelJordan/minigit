@@ -11,6 +11,10 @@ import java.nio.file.Path;
  * Command that creates a new repository in the current directory.
  */
 public final class InitCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public InitCommand() {}
 
     @Override
     public String name() {

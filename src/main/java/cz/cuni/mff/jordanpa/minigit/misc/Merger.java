@@ -21,6 +21,11 @@ import static cz.cuni.mff.jordanpa.minigit.misc.CommonAncestorFinder.findCommonA
 public final class Merger {
 
     /**
+     * Private constructor to prevent instantiation.
+     */
+    private Merger() { }
+
+    /**
      * Result of a three-way merge on a single file.
      * @param blob The resulting merged blob.
      * @param hasConflicts Whether the merge contains conflict markers.

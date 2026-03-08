@@ -20,6 +20,11 @@ import java.util.List;
  * </p>
  */
 public final class StatusCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public StatusCommand() {}
+
     @Override
     public String name() {
         return "status";

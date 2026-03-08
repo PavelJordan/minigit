@@ -17,6 +17,11 @@ import java.nio.file.Path;
  * </p>
  */
 public final class ShowCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public ShowCommand() {}
+
     @Override
     public String name() {
         return "show";

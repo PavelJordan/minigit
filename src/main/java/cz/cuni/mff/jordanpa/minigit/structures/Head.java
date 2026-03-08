@@ -28,8 +28,17 @@ public record Head(Type type, String data) {
      * Type of the HEAD pointer - following branch, detached to commit, or UNSET.
      */
     public enum Type {
+        /**
+         * The HEAD is following a branch.
+         */
         BRANCH,
+        /**
+         * The HEAD is detached to a commit.
+         */
         COMMIT,
+        /**
+         * The HEAD is unset (repository is empty).
+         */
         UNSET
     }
 

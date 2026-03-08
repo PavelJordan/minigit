@@ -19,6 +19,11 @@ import java.util.*;
 public final class CommonAncestorFinder {
 
     /**
+     * Private constructor to prevent instantiation.
+     */
+    private CommonAncestorFinder() {}
+
+    /**
      * Find the best common ancestor of two commits.
      *
      * <p>

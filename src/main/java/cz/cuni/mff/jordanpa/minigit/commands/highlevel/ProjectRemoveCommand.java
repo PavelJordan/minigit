@@ -10,6 +10,11 @@ import java.nio.file.Path;
  * Command that removes a repository from the project manager.
  */
 public final class ProjectRemoveCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public ProjectRemoveCommand() {}
+
     @Override
     public String name() {
         return "project-remove";

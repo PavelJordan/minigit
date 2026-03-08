@@ -10,6 +10,11 @@ import java.nio.file.Path;
  * Command that lists all repositories registered in the project manager in the current directory.
  */
 public final class ProjectsCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public ProjectsCommand() {}
+
     @Override
     public String name() {
         return "projects";

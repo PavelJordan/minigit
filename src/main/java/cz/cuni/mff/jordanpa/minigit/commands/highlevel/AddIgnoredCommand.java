@@ -17,6 +17,10 @@ import java.util.List;
  * </p>
  */
 public final class AddIgnoredCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public AddIgnoredCommand() {}
     @Override
     public String name() {
         return "add-ignored";

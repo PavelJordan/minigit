@@ -14,6 +14,11 @@ import java.nio.file.Path;
  * </p>
  */
 public final class MergeStopCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public MergeStopCommand() {}
+
     @Override
     public String name() {
         return "merge-stop";

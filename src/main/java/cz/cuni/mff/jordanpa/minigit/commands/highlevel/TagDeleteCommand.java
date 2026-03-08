@@ -16,6 +16,11 @@ import java.util.List;
  * </p>
  */
 public final class TagDeleteCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public TagDeleteCommand() {}
+
     @Override
     public String name() {
         return "tag-delete";

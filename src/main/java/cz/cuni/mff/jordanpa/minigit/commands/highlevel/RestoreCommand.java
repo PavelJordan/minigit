@@ -20,6 +20,10 @@ import java.util.Map;
  * </p>
  */
 public final class RestoreCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public RestoreCommand() {}
 
     @Override
     public String name() {

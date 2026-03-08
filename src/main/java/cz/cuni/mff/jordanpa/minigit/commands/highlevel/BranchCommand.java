@@ -15,6 +15,10 @@ import java.nio.file.Path;
  * </p>
  */
 public final class BranchCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public BranchCommand() {}
     @Override
     public String name() {
         return "branch";

@@ -18,9 +18,27 @@ import java.util.Map;
  * </p>
  */
 public abstract sealed class MiniGitObject implements Sha1Hashable permits Blob, Tree, Commit {
+
+    /**
+     * Protected default constructor for children
+     */
+    protected MiniGitObject() {}
+
+    /**
+     * The blob header used at the start of each blob file.
+     */
     protected static final byte[] BLOB_HEADER =   "[[blob]]..".getBytes();
+    /**
+     * The tree header used at the start of each tree file.
+     */
     protected static final byte[] TREE_HEADER =   "[[tree]]..".getBytes();
+    /**
+     * The commit header used at the start of each commit file.
+     */
     protected static final byte[] COMMIT_HEADER = "[[commit]]".getBytes();
+    /**
+     * The number of bytes in the header of each object. You can notice that all headers are the same length.
+     */
     protected static final int HEADER_SIZES = BLOB_HEADER.length;
 
     /**

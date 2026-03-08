@@ -14,6 +14,11 @@ import java.nio.file.Path;
  * </p>
  */
 public final class ProjectsInitCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public ProjectsInitCommand() {}
+
     @Override
     public String name() {
         return "projects-init";

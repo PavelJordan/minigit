@@ -10,6 +10,11 @@ import java.nio.file.Path;
  * Command that adds a repository to the project manager. The user can specify multiple paths. Use the paths to roots.
  */
 public final class ProjectAddCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public ProjectAddCommand() {}
+
     @Override
     public String name() {
         return "project-add";

@@ -20,6 +20,11 @@ import java.util.List;
 public final class FileHelper {
 
     /**
+     * Private constructor to prevent instantiation.
+     */
+    private FileHelper() {}
+
+    /**
      *
      * Get all paths here
      *

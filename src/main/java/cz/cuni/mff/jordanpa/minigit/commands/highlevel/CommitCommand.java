@@ -23,6 +23,10 @@ import java.util.Map;
  * </p>
  */
 public final class CommitCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public CommitCommand() {}
     private static final String FIRST_BRANCH_NAME = "master";
     @Override
     public String name() {

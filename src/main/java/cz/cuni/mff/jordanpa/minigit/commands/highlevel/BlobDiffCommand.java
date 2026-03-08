@@ -18,6 +18,10 @@ import java.util.List;
  * </p>
  */
 public final class BlobDiffCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public BlobDiffCommand() {}
     @Override
     public String name() {
         return "blob-diff";

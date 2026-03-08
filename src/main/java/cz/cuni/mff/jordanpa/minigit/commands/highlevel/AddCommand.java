@@ -20,6 +20,10 @@ import java.util.*;
  * </p>
  */
 public final class AddCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public AddCommand() {}
     @Override
     public String name() {
         return "add";

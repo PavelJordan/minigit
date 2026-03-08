@@ -15,6 +15,10 @@ import java.nio.file.Path;
  * </p>
  */
 public final class BranchDeleteCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public BranchDeleteCommand() {}
 
     @Override
     public String name() {

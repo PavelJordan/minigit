@@ -13,6 +13,12 @@ import java.util.Map;
  * See user documentation for usage and programmer documentation for implementation details.
  */
 public class MiniGit {
+
+    /**
+     * Private constructor to prevent instantiation.
+     */
+    private MiniGit() {}
+
     static void main(String[] args) {
         Map<String, Command> plugins = PluginLoader.getLoadedPlugins();
         if (args.length == 0) {

@@ -20,6 +20,11 @@ import java.util.Set;
  * </p>
  */
 public final class LogCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public LogCommand() {}
+
     @Override
     public String name() {
         return "log";

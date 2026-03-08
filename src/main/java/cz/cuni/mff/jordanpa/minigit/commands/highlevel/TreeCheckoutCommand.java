@@ -16,6 +16,11 @@ import java.nio.file.Path;
  * </p>
  */
 public final class TreeCheckoutCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public TreeCheckoutCommand() {}
+
     @Override
     public String name() {
         return "tree-checkout";

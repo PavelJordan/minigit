@@ -17,6 +17,10 @@ import java.util.List;
  * </p>
  */
 public final class AuthorCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public AuthorCommand() {}
 
     @Override
     public String name() {

@@ -16,6 +16,11 @@ import java.util.List;
  * </p>
  */
 public final class RestoreStagedCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public RestoreStagedCommand() {}
+
     @Override
     public String name() {
         return "restore-staged";

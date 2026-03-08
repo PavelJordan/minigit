@@ -18,6 +18,7 @@ import java.nio.file.Path;
 public interface MinigitObjectLoader {
     /**
      * Loads the object from the internal database with the specified hash. The implementation depends on a concrete class.
+     * @param hash Hash of the object to load.
      * @return Object with the correct concrete type, or null if it is not found.
      * @throws IOException If the object is corrupted.
      */
@@ -25,6 +26,7 @@ public interface MinigitObjectLoader {
 
     /**
      * Returns the root path of the repository.
+     * @return the root path of the repository.
      */
     Path getRootPath();
 

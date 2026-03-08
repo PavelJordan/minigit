@@ -32,7 +32,7 @@ public final class Commit extends MiniGitObject {
      * Cached SHA-1 hash of this commit.
      */
     private String sha1;
-    public final String AUTHOR_HEADER = "AUTHOR";
+    private final String AUTHOR_HEADER = "AUTHOR";
 
     private static final DateFormat DATE_FORMAT = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
 
@@ -42,6 +42,7 @@ public final class Commit extends MiniGitObject {
      * @param parent the data of the parent commit
      * @param author the author of this commit
      * @param message the commit message
+     * @param date the date of the commit
      */
     public Commit(String snapshot, String parent, Author author, String message, Date date) {
         this.Snapshot = snapshot;
@@ -58,6 +59,7 @@ public final class Commit extends MiniGitObject {
      * @param parentFrom the data of the parent commit the merge is from.
      * @param author the author of this commit
      * @param message the commit message
+     * @param date the date of the commit
      */
     public Commit(String snapshot, String parentInto, String parentFrom, Author author, String message, Date date) {
         this.Snapshot = snapshot;
@@ -153,7 +155,7 @@ public final class Commit extends MiniGitObject {
         String treeHashStr = indent + "Tree data : " + Snapshot + "\n";
         String authorStr = indent + "Author: " + author.name() + ", " + author.email() + "\n";
         String dateStr = indent + "Date: " + date.toString() + "\n";
-        String messageStr = indent + "Message: \n" + indent + "[\n" + indentedMessage.toString() + indent + "]\n";
+        String messageStr = indent + "Message: \n" + indent + "[\n" + indentedMessage + indent + "]\n";
         return hashStr + hashStrEnd.append("\n") + treeHashStr + authorStr + dateStr + messageStr;
     }
 

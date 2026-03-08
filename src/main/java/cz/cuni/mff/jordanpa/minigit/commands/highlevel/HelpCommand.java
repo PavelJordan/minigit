@@ -11,6 +11,10 @@ import java.util.Map;
  * With a parameter, it prints the help message of the specified command.
  */
 public final class HelpCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public HelpCommand() {}
 
     @Override
     public String name() {

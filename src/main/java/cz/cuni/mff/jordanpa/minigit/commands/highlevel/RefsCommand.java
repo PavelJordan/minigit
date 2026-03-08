@@ -15,6 +15,11 @@ import java.util.List;
  * </p>
  */
 public final class RefsCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public RefsCommand() {}
+
     @Override
     public String name() {
         return "refs";

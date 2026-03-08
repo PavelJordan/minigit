@@ -16,6 +16,11 @@ import java.nio.file.Path;
  * </p>
  */
 public final class BlobCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public BlobCommand() {}
+
     @Override
     public String name() {
         return "blob";

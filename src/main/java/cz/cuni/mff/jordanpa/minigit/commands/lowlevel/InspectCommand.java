@@ -15,6 +15,11 @@ import java.nio.file.Path;
  * </p>
  */
 public final class InspectCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public InspectCommand() {}
+
     @Override
     public String name() {
         return "inspect";

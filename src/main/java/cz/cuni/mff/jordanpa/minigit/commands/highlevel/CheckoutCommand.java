@@ -25,6 +25,11 @@ import java.nio.file.Path;
  * </p>
  */
 public final class CheckoutCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public CheckoutCommand() {}
+
     private static final String HEAD = "HEAD";
     @Override
     public String name() {

@@ -12,21 +12,25 @@ public interface Command {
 
     /**
      * The name of the command as will be used in the command line.
+     * @return The name of the command.
      */
     String name();
 
     /**
      * Usage message for the command, seen in `minigit help name` right before shortHelp
+     * @return The usage message.
      */
     String usage();
 
     /**
      * Short help message for the command, seen in `minigit help` and in `minigit help name`
+     * @return The short help message.
      */
     String shortHelp();
 
     /**
      * Long help message for the command, seen only in `minigit help name` right after shortHelp.
+     * @return The long help message.
      */
     String help();
 

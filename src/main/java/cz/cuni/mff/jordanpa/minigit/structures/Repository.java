@@ -31,9 +31,21 @@ public final class Repository implements MinigitObjectLoader {
      * Type of change between two compared versions of a file.
      */
     public enum FileStatusType {
+        /**
+         * The file is the same in both versions.
+         */
         SAME,
+        /**
+         * The file was modified in the second version.
+         */
         MODIFIED,
+        /**
+         * The file was deleted in the second version.
+         */
         DELETED,
+        /**
+         * The file was added in the second version.
+         */
         NEW
     }
 
@@ -60,6 +72,11 @@ public final class Repository implements MinigitObjectLoader {
     private static final String REF_TYPE_BRANCH = "BRANCH";
     private static final String REF_TYPE_TAG = "TAG";
 
+    /**
+     * A file status.
+     * @param path The path to the file.
+     * @param status The type of change between the two versions of the file.
+     */
     public record FileStatus(Path path, FileStatusType status) {}
 
     /**
@@ -372,6 +389,8 @@ public final class Repository implements MinigitObjectLoader {
     }
 
     /**
+     * Get the current HEAD.
+     *
      * @return The current HEAD, which is either unset, detached to commit, or following branch, as loaded from its file.
      */
     public Head getHead(){
@@ -468,6 +487,8 @@ public final class Repository implements MinigitObjectLoader {
     }
 
     /**
+     * Get branches in this repository.
+     *
      * @return A copy of the map "branch name -> commit hash".
      */
     public Map<String, String> getBranches() {
@@ -515,6 +536,8 @@ public final class Repository implements MinigitObjectLoader {
     }
 
     /**
+     * Get tags in this repository.
+     *
      * @return A copy of the map "tag name -> commit hash".
      */
     public Map<String, String> getTags() {
@@ -562,6 +585,8 @@ public final class Repository implements MinigitObjectLoader {
     }
 
     /**
+     * Get the current author, as loaded from the author file (or set)
+     *
      * @return The current author of the repository, or null if no author is set.
      */
     public Author getCurrentAuthor() {
@@ -585,6 +610,8 @@ public final class Repository implements MinigitObjectLoader {
     }
 
     /**
+     * Whether merging is currently in progress.
+     *
      * @return Whether there is currently a merging in progress.
      */
     public boolean isMerging() {
@@ -592,6 +619,8 @@ public final class Repository implements MinigitObjectLoader {
     }
 
     /**
+     * Get the currently active merging information.
+     *
      * @return The currently active merging information, or null if no merging is in progress.
      */
     public MergingCommits getMergingCommits() {

@@ -16,6 +16,11 @@ import java.util.List;
  * </p>
  */
 public final class TagCommand implements Command {
+    /**
+     * Constructor for the command.
+     */
+    public TagCommand() {}
+
     @Override
     public String name() {
         return "tag";

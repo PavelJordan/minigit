@@ -12,6 +12,7 @@ public interface Sha1Hashable {
      * Returns the SHA1 hash of the object. It should be unique for each object that has different data,
      * and the same when the data is the same.
      * Should be calculated only once, for example, when the object is first created, then cached.
+     * @return the SHA1 hash of the object represented as a hexadecimal string.
      */
     String miniGitSha1();
 

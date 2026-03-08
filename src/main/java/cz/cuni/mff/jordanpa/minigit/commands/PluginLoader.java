@@ -10,6 +10,11 @@ import java.util.*;
 public final class PluginLoader {
 
     /**
+     * Private constructor to prevent instantiation.
+     */
+    private PluginLoader() {}
+
+    /**
      * Map of all loaded commands.
      */
     private static Map<String, Command> commands;
