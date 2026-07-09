@@ -3,6 +3,7 @@
  */
 module cz.cuni.mff.jordanpa.minigit {
     exports cz.cuni.mff.jordanpa.minigit;
+    exports cz.cuni.mff.jordanpa.minigit.api;
     exports cz.cuni.mff.jordanpa.minigit.commands;
     exports cz.cuni.mff.jordanpa.minigit.misc;
     exports cz.cuni.mff.jordanpa.minigit.structures;

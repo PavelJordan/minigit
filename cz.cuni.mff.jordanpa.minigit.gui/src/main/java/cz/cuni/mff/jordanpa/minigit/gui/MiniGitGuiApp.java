@@ -27,6 +27,11 @@ import javafx.stage.Stage;
  */
 public class MiniGitGuiApp extends Application {
 
+    /**
+     * Constructor for the application. Called from JavaFX - don't call it yourself!
+     */
+    public MiniGitGuiApp() {}
+
     private final ListView<String> unstagedList = new ListView<>();
     private final ListView<String> stagedList = new ListView<>();
 

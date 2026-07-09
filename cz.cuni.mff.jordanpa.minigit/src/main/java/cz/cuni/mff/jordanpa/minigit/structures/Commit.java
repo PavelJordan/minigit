@@ -115,6 +115,33 @@ public final class Commit extends MiniGitObject {
     }
 
     /**
+     * Get the commit message.
+     *
+     * @return The commit message.
+     */
+    public String getMessage() {
+        return message;
+    }
+
+    /**
+     * Get the author of this commit.
+     *
+     * @return The author of this commit.
+     */
+    public Author getAuthor() {
+        return author;
+    }
+
+    /**
+     * Get the date of this commit.
+     *
+     * @return Copy of the date of this commit.
+     */
+    public Date getDate() {
+        return new Date(date.getTime());
+    }
+
+    /**
      * Get the description of this commit, but also consider branches, tags, current head, and indent before the info.
      *
      * <p>
