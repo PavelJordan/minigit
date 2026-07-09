@@ -456,3 +456,21 @@ look into the Javadocs of the MiniGit classes.
 ChatGPT wrote about 1/4–1/2 of the in-code Javadocs, after giving him all my other manually
 written Javadocs and the user manual + programmer documentation written by me. I then carefully walked through
 the generated Javadocs and made sure that they were correct and not missing any ideas.
+
+## The gui extension
+
+For GUI, I made two things - API next to CLI and the GUI itself.
+API was needed because CLI didn't match the output I wanted (plus it printed to stdout) and passing of string parameters is
+awkward. Instead, we have MiniGitApi - which is a facade on top of the lower-level methods of MiniGit,
+but with nice parameters and nice return values, so it can be easily used by MiniGit Gui.
+
+### API
+
+The api contains as little methods as possible for GUI (so creation, and author selection, for example, must be handled via CLI).
+I will first describe API, so describing the GUI that uses the API will be easier.
+
+TODO
+
+### GUI
+
+TODO
