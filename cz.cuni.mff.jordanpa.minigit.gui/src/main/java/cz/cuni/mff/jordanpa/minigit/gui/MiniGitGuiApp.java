@@ -1,6 +1,7 @@
 package cz.cuni.mff.jordanpa.minigit.gui;
 
 import cz.cuni.mff.jordanpa.minigit.api.*;
+import cz.cuni.mff.jordanpa.minigit.gui.panels.DiffPanel;
 import cz.cuni.mff.jordanpa.minigit.gui.panels.StagedPanel;
 import cz.cuni.mff.jordanpa.minigit.gui.panels.UnstagedPanel;
 import cz.cuni.mff.jordanpa.minigit.gui.utils.MiniGitBackgroundWorker;
@@ -29,7 +30,7 @@ public class MiniGitGuiApp extends Application {
 
     private UnstagedPanel unstagedPanel;
     private StagedPanel stagedPanel;
-    private final TextArea diffView = new TextArea();
+    private DiffPanel diffPanel;
     private final Label conflictRow = new Label("Conflicts soon");
 
     @Override
@@ -49,8 +50,6 @@ public class MiniGitGuiApp extends Application {
 
         BorderPane root = createScreen();
 
-        // TODO Reload status when files change (some listener to file system? Or simply on-focus? Or button?)
-
         stage.setTitle("MiniGit Gui");
         stage.setScene(new Scene(root, 1200, 700));
         stage.show();
@@ -60,21 +59,33 @@ public class MiniGitGuiApp extends Application {
     private BorderPane createScreen() {
         unstagedPanel = new UnstagedPanel(api, this::refresh);
         stagedPanel = new StagedPanel(api, this::refresh);
+        diffPanel = new DiffPanel(api);
 
-        // Show diff of file if some was clicked
-        unstagedPanel.setOnFileClicked(file -> diffView.setText("Diff of unstaged " + file.path()));
-        stagedPanel.setOnFileClicked(file -> diffView.setText("Diff of staged " + file.path()));
-        diffView.setEditable(false);
+        // Show diff of file if some was clicked, and deselect the other panel
+        unstagedPanel.setOnFileClicked(file -> {
+            stagedPanel.clearSelection();
+            diffPanel.showUnstaged(file);
+        });
+        stagedPanel.setOnFileClicked(file -> {
+            unstagedPanel.clearSelection();
+            diffPanel.showStaged(file);
+        });
 
-        SplitPane panels = new SplitPane(unstagedPanel, stagedPanel, panelWithButtons("Diff", diffView),
+        SplitPane panels = new SplitPane(unstagedPanel, stagedPanel, diffPanel,
                 panelWithButtons("Tree", new Label("Commit tree will be here")));
 
         panels.setOrientation(Orientation.HORIZONTAL);
         panels.setDividerPositions(0.25, 0.5, 0.75);
 
+        Button refreshButton = new Button("Refresh");
+        refreshButton.setOnAction(_ -> refresh());
+
+        HBox bottomRow = new HBox(5, refreshButton, conflictRow);
+        bottomRow.setAlignment(Pos.CENTER_LEFT);
+        bottomRow.setPadding(new Insets(5));
+
         BorderPane root = new BorderPane(panels);
-        root.setBottom(conflictRow);
-        BorderPane.setMargin(conflictRow, new Insets(5));
+        root.setBottom(bottomRow);
 
         return root;
     }
@@ -84,6 +95,7 @@ public class MiniGitGuiApp extends Application {
      */
     private void refresh() {
         MiniGitBackgroundWorker.run(api::status, (StatusResult status) -> {
+            diffPanel.clear();
             unstagedPanel.setFiles(status.unstaged());
             stagedPanel.setFiles(status.staged());
             stage.setTitle("MiniGit Gui ~ " + headText(status));
@@ -130,9 +142,9 @@ public class MiniGitGuiApp extends Application {
         VBox box = titled(title, content);
         HBox row = new HBox(5, buttons);
         if (buttons.length == 0) {
-            Button spacer = new Button("spacer");
-            spacer.setVisible(false);
-            row.getChildren().add(spacer);
+            Button spacerFakeButton = new Button("bubu");
+            spacerFakeButton.setVisible(false);
+            row.getChildren().add(spacerFakeButton);
         }
         for (Node button : row.getChildren()) {
             ((Button) button).setMaxWidth(Double.MAX_VALUE);

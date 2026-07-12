@@ -229,7 +229,7 @@ public final class MiniGitApi {
             toVisit.push(headCommitHash);
             while (!toVisit.isEmpty()) {
                 String hash = toVisit.pop();
-                if (hash == null || !visited.add(hash)) {
+                if (!visited.add(hash)) {
                     continue;
                 }
                 if (!(repo.loadFromInternal(hash) instanceof Commit commit)) {
@@ -252,17 +252,17 @@ public final class MiniGitApi {
      * Diff a file between the index and the working directory.
      *
      * @param file The CWD-relative path of the file.
-     * @return The diff chunks - empty if the versions are the same.
+     * @return The whole-file using diff lines.
      * @throws MiniGitApiException If reading the file or the repository fails.
      */
-    public List<DiffChunk> diffWorkingVsIndex(Path file) throws MiniGitApiException {
+    public List<DiffLine> diffWorkingVsIndex(Path file) throws MiniGitApiException {
         Repository repo = loadRepo();
         Path key = file.normalize();
         try {
             String indexHash = repo.getTrackedFiles().get(key);
             Blob oldBlob = indexHash == null ? new Blob(new byte[0]) : loadBlob(repo, indexHash);
             Blob newBlob = Files.exists(key) ? new Blob(key) : new Blob(new byte[0]);
-            return diffChunks(oldBlob, newBlob);
+            return diffLines(oldBlob, newBlob);
         } catch (IOException e) {
             throw new MiniGitApiException("Error diffing file " + file + ": " + e.getMessage(), e);
         }
@@ -272,10 +272,10 @@ public final class MiniGitApi {
      * Diff a file between the last commit and the index.
      *
      * @param file The CWD-relative path of the file.
-     * @return The diff chunks - empty if the versions are the same.
+     * @return The whole-file using diff lines.
      * @throws MiniGitApiException If reading the repository fails.
      */
-    public List<DiffChunk> diffIndexVsHead(Path file) throws MiniGitApiException {
+    public List<DiffLine> diffIndexVsHead(Path file) throws MiniGitApiException {
         Repository repo = loadRepo();
         Path key = file.normalize();
         try {
@@ -283,7 +283,7 @@ public final class MiniGitApi {
             String indexHash = repo.getTrackedFiles().get(key);
             Blob oldBlob = headHash == null ? new Blob(new byte[0]) : loadBlob(repo, headHash);
             Blob newBlob = indexHash == null ? new Blob(new byte[0]) : loadBlob(repo, indexHash);
-            return diffChunks(oldBlob, newBlob);
+            return diffLines(oldBlob, newBlob);
         } catch (IOException e) {
             throw new MiniGitApiException("Error diffing file " + file + ": " + e.getMessage(), e);
         }
@@ -389,24 +389,40 @@ public final class MiniGitApi {
     }
 
     /**
-     * Diff two blobs and convert the result into chunks with the actual lines.
+     * Diff two blobs and convert the result into diff lines of the entire file.
      *
      * @param oldBlob The old version of the file.
      * @param newBlob The new version of the file.
-     * @return The diff chunks.
+     * @return The whole-file using diff lines.
      * @throws IOException If reading the blob contents fails.
      */
-    private static List<DiffChunk> diffChunks(Blob oldBlob, Blob newBlob) throws IOException {
+    private static List<DiffLine> diffLines(Blob oldBlob, Blob newBlob) throws IOException {
         List<MiniGitDiff.DiffResult> results = MiniGitDiff.diff(oldBlob, newBlob);
         List<String> oldLines = oldBlob.readAllLines();
         List<String> newLines = newBlob.readAllLines();
-        List<DiffChunk> chunks = new ArrayList<>();
+        List<DiffLine> lines = new ArrayList<>();
+        long newPosition = 0;
         for (MiniGitDiff.DiffResult result : results) {
-            chunks.add(new DiffChunk(result.replaceFrom(), List.copyOf(oldLines.subList((int) result.replaceFrom(),
-                    (int) result.replaceTo())), result.replaceWithFrom(),
-                    List.copyOf(newLines.subList((int) result.replaceWithFrom(), (int) result.replaceWithTo()))));
+
+            // Unchanged lines before this replacement
+            for (; newPosition < result.replaceWithFrom(); newPosition++) {
+                lines.add(new DiffLine(DiffLine.Type.SAME, newLines.get((int) newPosition)));
+            }
+            // Replaced old lines
+            for (long oldPosition = result.replaceFrom(); oldPosition < result.replaceTo(); oldPosition++) {
+                lines.add(new DiffLine(DiffLine.Type.DELETED, oldLines.get((int) oldPosition)));
+            }
+            // Replacing new lines
+            for (; newPosition < result.replaceWithTo(); newPosition++) {
+                lines.add(new DiffLine(DiffLine.Type.ADDED, newLines.get((int) newPosition)));
+            }
         }
-        return chunks;
+
+        // Unchanged lines after the last replacement
+        for (; newPosition < newLines.size(); newPosition++) {
+            lines.add(new DiffLine(DiffLine.Type.SAME, newLines.get((int) newPosition)));
+        }
+        return lines;
     }
 
     /**

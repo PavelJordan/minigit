@@ -41,9 +41,9 @@ public class FileListPanelHelper extends VBox {
 
     private HBox setUpButtons(Button[] actionButtons) {
         Button all = new Button("All");
-        all.setOnAction(event -> listView.getSelectionModel().selectAll());
+        all.setOnAction(_ -> listView.getSelectionModel().selectAll());
         Button none = new Button("None");
-        none.setOnAction(event -> listView.getSelectionModel().clearSelection());
+        none.setOnAction(_ -> clearSelection());
 
         HBox row = new HBox(5);
         row.getChildren().addAll(actionButtons);
@@ -61,7 +61,7 @@ public class FileListPanelHelper extends VBox {
             @Override
             protected void updateItem(Repository.FileStatus item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : marker(item.status()) + " " + item.path());
+                setText(empty ? null : marker(item.status()) + " " + item.path());
             }
         });
         VBox.setVgrow(listView, Priority.ALWAYS);
@@ -81,6 +81,17 @@ public class FileListPanelHelper extends VBox {
                 listView.getSelectionModel().select(i);
             }
         }
+    }
+
+    /**
+     * Deselect all files in the list.
+     *
+     * <p>
+     *     Used by the main window to deselect this panel when the user selects a file in another one.
+     * </p>
+     */
+    public void clearSelection() {
+        listView.getSelectionModel().clearSelection();
     }
 
     /**
