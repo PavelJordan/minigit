@@ -1,20 +1,17 @@
 package cz.cuni.mff.jordanpa.minigit.gui;
 
-import javafx.application.Application;
-import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.TextArea;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import cz.cuni.mff.jordanpa.minigit.api.*;
+import cz.cuni.mff.jordanpa.minigit.gui.panels.StagedPanel;
+import cz.cuni.mff.jordanpa.minigit.gui.panels.UnstagedPanel;
+import cz.cuni.mff.jordanpa.minigit.gui.utils.MiniGitBackgroundWorker;
+
+import javafx.application.*;
+import javafx.geometry.*;
+import javafx.scene.*;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import java.nio.file.Path;
 
 /**
  * Main window of the MiniGit gui in JavaFX.
@@ -27,37 +24,50 @@ import javafx.stage.Stage;
  */
 public class MiniGitGuiApp extends Application {
 
-    /**
-     * Constructor for the application. Called from JavaFX - don't call it yourself!
-     */
-    public MiniGitGuiApp() {}
+    private MiniGitApi api;
+    private Stage stage;
 
-    private final ListView<String> unstagedList = new ListView<>();
-    private final ListView<String> stagedList = new ListView<>();
-
+    private UnstagedPanel unstagedPanel;
+    private StagedPanel stagedPanel;
     private final TextArea diffView = new TextArea();
-
-    // StackPane because it is simple to swap its contents between commit tree and commit details
-    private final StackPane treePane = new StackPane(new Label("Commit tree soon"));
-
     private final Label conflictRow = new Label("Conflicts soon");
 
     @Override
     public void start(Stage stage) {
+        this.stage = stage;
+
+        // Open the repository in the current directory, or prompt the user to create one
+        try {
+            api = MiniGitApi.open(Path.of(""));
+        } catch (MiniGitApiException e) {
+            new Alert(Alert.AlertType.ERROR,
+                    e.getMessage() + "\nCreate your repository with 'minigit init' in the terminal here first.",
+                    ButtonType.OK).showAndWait();
+            Platform.exit();
+            return;
+        }
+
+        BorderPane root = createScreen();
+
+        // TODO Reload status when files change (some listener to file system? Or simply on-focus? Or button?)
+
+        stage.setTitle("MiniGit Gui");
+        stage.setScene(new Scene(root, 1200, 700));
+        stage.show();
+        refresh();
+    }
+
+    private BorderPane createScreen() {
+        unstagedPanel = new UnstagedPanel(api, this::refresh);
+        stagedPanel = new StagedPanel(api, this::refresh);
+
+        // Show diff of file if some was clicked
+        unstagedPanel.setOnFileClicked(file -> diffView.setText("Diff of unstaged " + file.path()));
+        stagedPanel.setOnFileClicked(file -> diffView.setText("Diff of staged " + file.path()));
         diffView.setEditable(false);
 
-        unstagedList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        stagedList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-
-        SplitPane panels = new SplitPane(
-                panelWithButtons("Unstaged", unstagedList,
-                        new Button("Stage"), new Button("Reset"),
-                        new Button("All"), new Button("None")),
-                panelWithButtons("Staged", stagedList,
-                        new Button("Unstage"), new Button("Commit"),
-                        new Button("All"), new Button("None")),
-                panelWithButtons("Diff", diffView),
-                panelWithButtons("Tree", treePane));
+        SplitPane panels = new SplitPane(unstagedPanel, stagedPanel, panelWithButtons("Diff", diffView),
+                panelWithButtons("Tree", new Label("Commit tree will be here")));
 
         panels.setOrientation(Orientation.HORIZONTAL);
         panels.setDividerPositions(0.25, 0.5, 0.75);
@@ -66,9 +76,32 @@ public class MiniGitGuiApp extends Application {
         root.setBottom(conflictRow);
         BorderPane.setMargin(conflictRow, new Insets(5));
 
-        stage.setTitle("MiniGit Gui");
-        stage.setScene(new Scene(root, 1200, 700));
-        stage.show();
+        return root;
+    }
+
+    /**
+     * Reload the repository status in the background and load it into panels.
+     */
+    private void refresh() {
+        MiniGitBackgroundWorker.run(api::status, (StatusResult status) -> {
+            unstagedPanel.setFiles(status.unstaged());
+            stagedPanel.setFiles(status.staged());
+            stage.setTitle("MiniGit Gui ~ " + headText(status));
+        });
+    }
+
+    /**
+     * Get pretty description of HEAD.
+     *
+     * @param status The repository status.
+     * @return Description of commit/branch where HEAD points to.
+     */
+    private static String headText(StatusResult status) {
+        return switch (status.head().type()) {
+            case BRANCH -> "on branch " + status.head().data();
+            case COMMIT -> "detached at " + status.headCommitHash().substring(0, 7);
+            case UNSET -> "no commits yet";
+        };
     }
 
     /**
@@ -78,10 +111,10 @@ public class MiniGitGuiApp extends Application {
      * @param content the panel content
      * @return the wrapped panel
      */
-    private static VBox titled(String title, javafx.scene.Node content) {
+    private static VBox titled(String title, Node content) {
         VBox box = new VBox(5, new Label(title), content);
         box.setPadding(new Insets(5));
-        VBox.setVgrow(content, javafx.scene.layout.Priority.ALWAYS);
+        VBox.setVgrow(content, Priority.ALWAYS);
         return box;
     }
 
@@ -93,7 +126,7 @@ public class MiniGitGuiApp extends Application {
      * @param buttons buttons shown below the content
      * @return the wrapped panel
      */
-    private static VBox panelWithButtons(String title, javafx.scene.Node content, Button... buttons) {
+    private static VBox panelWithButtons(String title, Node content, Button... buttons) {
         VBox box = titled(title, content);
         HBox row = new HBox(5, buttons);
         if (buttons.length == 0) {
@@ -101,9 +134,9 @@ public class MiniGitGuiApp extends Application {
             spacer.setVisible(false);
             row.getChildren().add(spacer);
         }
-        for (javafx.scene.Node button : row.getChildren()) {
+        for (Node button : row.getChildren()) {
             ((Button) button).setMaxWidth(Double.MAX_VALUE);
-            HBox.setHgrow(button, javafx.scene.layout.Priority.ALWAYS);
+            HBox.setHgrow(button, Priority.ALWAYS);
         }
         box.getChildren().add(row);
         return box;

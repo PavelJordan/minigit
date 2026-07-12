@@ -1,14 +1,12 @@
 package cz.cuni.mff.jordanpa.minigit.api;
 
-import cz.cuni.mff.jordanpa.minigit.structures.Head;
-import cz.cuni.mff.jordanpa.minigit.structures.MergingCommits;
-import cz.cuni.mff.jordanpa.minigit.structures.Repository;
+import cz.cuni.mff.jordanpa.minigit.structures.*;
 
 import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Represents status of a repository.
+ * Represents status of repository.
  *
  * @param head The current HEAD (following a branch, detached to a commit, or UNSET).
  * @param headCommitHash The hash of the commit HEAD points to, or null if HEAD is UNSET.

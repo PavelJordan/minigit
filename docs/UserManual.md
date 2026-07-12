@@ -81,3 +81,7 @@ This works for:
  - No bisecting
 
 All of this can be implemented later, if needed.
+
+## The gui extension
+
+TODO

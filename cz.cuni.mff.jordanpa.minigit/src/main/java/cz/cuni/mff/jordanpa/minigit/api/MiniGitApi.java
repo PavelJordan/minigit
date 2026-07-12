@@ -24,6 +24,9 @@ import java.util.*;
  *     The description of the methods is short. If you want to know, how MiniGit behaves, look into
  *     Javadocs of CLI commands.
  * </p>
+ * <p>
+ *     Read package-info.java docs: AI helped me with matching the API commands to the CLI commands
+ * </p>
  */
 public final class MiniGitApi {
 

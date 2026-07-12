@@ -3,7 +3,7 @@
  *
  * <p>
  *     You can work out the panels' functionality by their names.
- *     They are included by {@link cz.cuni.mff.jordanpa.minigit.gui.MiniGitGuiApp}.
+ *     They are included by MiniGitGuiApp.
  * </p>
  */
 package cz.cuni.mff.jordanpa.minigit.gui.panels;

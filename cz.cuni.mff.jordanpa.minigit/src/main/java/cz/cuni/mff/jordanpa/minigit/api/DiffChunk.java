@@ -3,7 +3,7 @@ package cz.cuni.mff.jordanpa.minigit.api;
 import java.util.List;
 
 /**
- * One chunk of file diff - returned by diff methods of MiniGitApi.
+ * One chunk of file diff, as returned by diff methods of MiniGitApi.
  *
  * <p>
  *     Chunk format: from line oldStart to line oldStart + oldLines.size() are replaced by the given new lines. One of the sides can

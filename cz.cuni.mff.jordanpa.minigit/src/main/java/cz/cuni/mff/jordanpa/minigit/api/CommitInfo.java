@@ -1,12 +1,10 @@
 package cz.cuni.mff.jordanpa.minigit.api;
 
 import cz.cuni.mff.jordanpa.minigit.misc.Author;
-
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
- * Information about one commit in the history - returned by log method of MiniGitApi.
+ * Information about one commit in history, as returned by log method of MiniGitApi.
  *
  * @param hash The hash of the commit.
  * @param parents Hashes of the parent commits - empty for the first commit, two for a merge commit, otherwise one.
