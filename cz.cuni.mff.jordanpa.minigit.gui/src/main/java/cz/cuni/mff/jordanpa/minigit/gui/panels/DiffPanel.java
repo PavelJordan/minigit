@@ -1,12 +1,10 @@
 package cz.cuni.mff.jordanpa.minigit.gui.panels;
 
 import cz.cuni.mff.jordanpa.minigit.api.*;
+import cz.cuni.mff.jordanpa.minigit.gui.utils.ListPanelHelper;
 import cz.cuni.mff.jordanpa.minigit.gui.utils.MiniGitBackgroundWorker;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 
-import javafx.geometry.Insets;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
 import java.util.List;
 
 /**
@@ -15,16 +13,16 @@ import java.util.List;
  * <p>
  *     For a file clicked in the unstaged panel, changes are the working directory vs index.
  *     For a file clicked in the staged panel, changes are the index vs last commit.
+ *     For a commit clicked in the tree panel, changes are the commit vs its previous commit,
+ *     with the changed files separated by header lines.
  * </p>
  * <p>
  *     The whole file is shown. Added lines are green, deleted lines are red.
  * </p>
  */
-public final class DiffPanel extends VBox {
+public final class DiffPanel extends ListPanelHelper<DiffLine> {
 
     private final MiniGitApi api;
-    private final Label title = new Label("Diff");
-    private final ListView<DiffLine> listView = new ListView<>();
 
     /**
      * Create the panel.
@@ -32,33 +30,18 @@ public final class DiffPanel extends VBox {
      * @param api The MiniGit API.
      */
     public DiffPanel(MiniGitApi api) {
-        super(5);
+        super("Diff");
         this.api = api;
-        setPadding(new Insets(5));
-
-        setUpListView();
-
-        // Invisible button so the list bottom is aligned with the neighboring panels
-        Button spacerFakeButton = new Button("Bubu");
-        spacerFakeButton.setVisible(false);
-
-        getChildren().addAll(title, listView, new HBox(5, spacerFakeButton));
     }
 
-    private void setUpListView() {
-        listView.setCellFactory(_ -> new ListCell<>() {
-            @Override
-            protected void updateItem(DiffLine item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty) {
-                    setText(null);
-                } else {
-                    setText(marker(item.type()) + item.line());
-                    setStyle(color(item.type()));
-                }
-            }
-        });
-        VBox.setVgrow(listView, Priority.ALWAYS);
+    @Override
+    protected String itemText(DiffLine item) {
+        return marker(item.type()) + item.line();
+    }
+
+    @Override
+    protected String itemStyle(DiffLine item) {
+        return color(item.type());
     }
 
     /**
@@ -80,10 +63,19 @@ public final class DiffPanel extends VBox {
     }
 
     /**
+     * Show the diff of a commit against its previous commit.
+     *
+     * @param commit The clicked commit.
+     */
+    public void showCommit(CommitInfo commit) {
+        show("commit " + commit.hash().substring(0, 7), () -> api.diffCommitVsParent(commit.hash()));
+    }
+
+    /**
      * Clear the panel.
      */
     public void clear() {
-        title.setText("Diff");
+        setTitle("Diff");
         listView.getItems().clear();
     }
 
@@ -95,7 +87,7 @@ public final class DiffPanel extends VBox {
      */
     private void show(String shownFile, MiniGitBackgroundWorker.ApiThrowingSupplier<List<DiffLine>> diff) {
         MiniGitBackgroundWorker.run(diff, (List<DiffLine> lines) -> {
-            title.setText("Diff ~ " + shownFile);
+            setTitle("Diff ~ " + shownFile);
             listView.getItems().setAll(lines);
         });
     }
@@ -108,7 +100,7 @@ public final class DiffPanel extends VBox {
      */
     private static String marker(DiffLine.Type type) {
         return switch (type) {
-            case SAME -> "  ";
+            case SAME, HEADER -> "  ";
             case DELETED -> "- ";
             case ADDED -> "+ ";
         };
@@ -118,13 +110,14 @@ public final class DiffPanel extends VBox {
      * Get style of a diff line based on its type.
      *
      * @param type of diff line.
-     * @return CSS with the line color, or empty string.
+     * @return CSS with the line color (bold for header), or empty string.
      */
     private static String color(DiffLine.Type type) {
         return switch (type) {
             case SAME -> "";
             case DELETED -> "-fx-text-fill: #c02020;";
             case ADDED -> "-fx-text-fill: #208020;";
+            case HEADER -> "-fx-font-weight: bold;";
         };
     }
 }

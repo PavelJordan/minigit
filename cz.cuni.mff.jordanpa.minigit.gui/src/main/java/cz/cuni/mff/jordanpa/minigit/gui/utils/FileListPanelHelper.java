@@ -2,13 +2,10 @@ package cz.cuni.mff.jordanpa.minigit.gui.utils;
 
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 
-import javafx.geometry.Insets;
-import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * Panel with a title, list of files which are selectable, and a row of buttons below.
@@ -19,9 +16,7 @@ import java.util.function.Consumer;
  *     buttons must be passed via constructor.
  * </p>
  */
-public class FileListPanelHelper extends VBox {
-
-    private final ListView<Repository.FileStatus> listView = new ListView<>();
+public class FileListPanelHelper extends ListPanelHelper<Repository.FileStatus> {
 
     /**
      * Create the panel.
@@ -30,41 +25,18 @@ public class FileListPanelHelper extends VBox {
      * @param actionButtons The panel-specific buttons shown in front of "All"/"None" buttons.
      */
     public FileListPanelHelper(String title, Button... actionButtons) {
-        super(5);
-        setPadding(new Insets(5));
-
-        setUpListView();
-        HBox rowOfButtons = setUpButtons(actionButtons);
-
-        getChildren().addAll(new Label(title), listView, rowOfButtons);
-    }
-
-    private HBox setUpButtons(Button[] actionButtons) {
         Button all = new Button("All");
-        all.setOnAction(_ -> listView.getSelectionModel().selectAll());
         Button none = new Button("None");
-        none.setOnAction(_ -> clearSelection());
+        super(title, Stream.concat(Arrays.stream(actionButtons), Stream.of(all, none)).toArray(Button[]::new));
 
-        HBox row = new HBox(5);
-        row.getChildren().addAll(actionButtons);
-        row.getChildren().addAll(all, none);
-        for (Node button : row.getChildren()) {
-            ((Button) button).setMaxWidth(Double.MAX_VALUE);
-            HBox.setHgrow(button, Priority.ALWAYS);
-        }
-        return row;
+        listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        all.setOnAction(_ -> listView.getSelectionModel().selectAll());
+        none.setOnAction(_ -> clearSelection());
     }
 
-    private void setUpListView() {
-        listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        listView.setCellFactory(view -> new ListCell<>() {
-            @Override
-            protected void updateItem(Repository.FileStatus item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty ? null : marker(item.status()) + " " + item.path());
-            }
-        });
-        VBox.setVgrow(listView, Priority.ALWAYS);
+    @Override
+    protected String itemText(Repository.FileStatus item) {
+        return marker(item.status()) + " " + item.path();
     }
 
     /**
@@ -84,17 +56,6 @@ public class FileListPanelHelper extends VBox {
     }
 
     /**
-     * Deselect all files in the list.
-     *
-     * <p>
-     *     Used by the main window to deselect this panel when the user selects a file in another one.
-     * </p>
-     */
-    public void clearSelection() {
-        listView.getSelectionModel().clearSelection();
-    }
-
-    /**
      * Get the paths of the currently selected files.
      *
      * @return The selected CWD-relative paths.
@@ -102,24 +63,6 @@ public class FileListPanelHelper extends VBox {
     public List<Path> selectedPaths() {
         return listView.getSelectionModel().getSelectedItems()
                 .stream().map(Repository.FileStatus::path).toList();
-    }
-
-    /**
-     * Set a callback for when the user clicks a file in the list.
-     *
-     * <p>
-     *     Used by the main window to show a diff of the clicked file in its diff panel.
-     * </p>
-     *
-     * @param onFileClicked Called with the clicked file status.
-     */
-    public void setOnFileClicked(Consumer<Repository.FileStatus> onFileClicked) {
-        listView.getSelectionModel().selectedItemProperty()
-                .addListener((_, _, newValue) -> {
-            if (newValue != null) {
-                onFileClicked.accept(newValue);
-            }
-        });
     }
 
     /**

@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Facade with MiniGit operations needed by GUI.
@@ -206,14 +207,15 @@ public final class MiniGitApi {
     }
 
     /**
-     * Get commit history reachable from HEAD.
+     * Get commit history reachable from HEAD, newest first.
      *
      * <p>
-     *     Commits are returned in DFS order from HEAD, each only once. With the parent hashes,
-     *     the caller can rebuild the whole commit graph.
+     *     Each commit is returned only once. With the parent hashes, the caller can rebuild
+     *     the whole commit graph. When the HEAD is detached, commits reachable from the
+     *     branches are included too, so the newer commits of the left branch stay visible.
      * </p>
      *
-     * @return List of commits, or empty list if there are no commits yet.
+     * @return List of commits sorted by date (newest first), or empty list if there are no commits yet.
      * @throws MiniGitApiException If the commit history is corrupted or cannot be read.
      */
     public List<CommitInfo> log() throws MiniGitApiException {
@@ -227,6 +229,9 @@ public final class MiniGitApi {
             Deque<String> toVisit = new ArrayDeque<>();
             Set<String> visited = new HashSet<>();
             toVisit.push(headCommitHash);
+            if (repo.getHead().type() == Head.Type.COMMIT) {
+                repo.getBranches().values().forEach(toVisit::push);
+            }
             while (!toVisit.isEmpty()) {
                 String hash = toVisit.pop();
                 if (!visited.add(hash)) {
@@ -245,6 +250,8 @@ public final class MiniGitApi {
         } catch (IOException e) {
             throw new MiniGitApiException("Error reading commit history: " + e.getMessage(), e);
         }
+        // Stable sort: commits sharing a date keep the DFS order, which visits children before parents
+        result.sort(Comparator.comparing(CommitInfo::date).reversed());
         return result;
     }
 
@@ -259,8 +266,7 @@ public final class MiniGitApi {
         Repository repo = loadRepo();
         Path key = file.normalize();
         try {
-            String indexHash = repo.getTrackedFiles().get(key);
-            Blob oldBlob = indexHash == null ? new Blob(new byte[0]) : loadBlob(repo, indexHash);
+            Blob oldBlob = loadBlobOrEmpty(repo, repo.getTrackedFiles().get(key));
             Blob newBlob = Files.exists(key) ? new Blob(key) : new Blob(new byte[0]);
             return diffLines(oldBlob, newBlob);
         } catch (IOException e) {
@@ -279,14 +285,115 @@ public final class MiniGitApi {
         Repository repo = loadRepo();
         Path key = file.normalize();
         try {
-            String headHash = repo.getHead().getCommitIndex(repo).get(key);
-            String indexHash = repo.getTrackedFiles().get(key);
-            Blob oldBlob = headHash == null ? new Blob(new byte[0]) : loadBlob(repo, headHash);
-            Blob newBlob = indexHash == null ? new Blob(new byte[0]) : loadBlob(repo, indexHash);
+            Blob oldBlob = loadBlobOrEmpty(repo, repo.getHead().getCommitIndex(repo).get(key));
+            Blob newBlob = loadBlobOrEmpty(repo, repo.getTrackedFiles().get(key));
             return diffLines(oldBlob, newBlob);
         } catch (IOException e) {
             throw new MiniGitApiException("Error diffing file " + file + ": " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Diff all files of a commit against its previous commit.
+     *
+     * <p>
+     *     Only changed files are included, each preceded by a HEADER line with its path.
+     *     The first commit is diffed against nothing, a merge commit against its first parent.
+     * </p>
+     *
+     * @param hash The hash of the commit.
+     * @return The whole-file using diff lines of all changed files.
+     * @throws MiniGitApiException If the commit does not exist or reading the repository fails.
+     */
+    public List<DiffLine> diffCommitVsParent(String hash) throws MiniGitApiException {
+        Repository repo = loadRepo();
+        try {
+            Commit commit = loadCommit(repo, hash);
+            Map<Path, String> newIndex = commitIndex(repo, commit);
+            Map<Path, String> oldIndex = commit.getParents().length == 0
+                    ? Map.of() : commitIndex(repo, loadCommit(repo, commit.getParents()[0]));
+
+            Set<Path> files = new TreeSet<>(oldIndex.keySet());
+            files.addAll(newIndex.keySet());
+
+            List<DiffLine> lines = new ArrayList<>();
+            for (Path file : files) {
+                String oldHash = oldIndex.get(file);
+                String newHash = newIndex.get(file);
+                if (Objects.equals(oldHash, newHash)) {
+                    continue;
+                }
+                lines.add(new DiffLine(DiffLine.Type.HEADER, file.toString()));
+                lines.addAll(diffLines(loadBlobOrEmpty(repo, oldHash), loadBlobOrEmpty(repo, newHash)));
+            }
+            return lines;
+        } catch (IOException e) {
+            throw new MiniGitApiException("Error diffing commit " + hash + ": " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Move HEAD and the working directory to a branch/tag/commit.
+     *
+     * <p>
+     *     Checking out a branch starts following it. Checking out a tag or a commit hash detaches the HEAD.
+     * </p>
+     *
+     * @param ref The branch name, tag name, or commit hash to check out.
+     * @throws MiniGitApiException If the working tree is dirty, the ref does not name a commit, or checkout fails.
+     */
+    public void checkout(String ref) throws MiniGitApiException {
+        Repository repo = loadRepo();
+        try {
+            if (repo.workingTreeDirty()) {
+                throw new MiniGitApiException("Cannot checkout - working tree is not clean.");
+            }
+            Commit commit = loadCommit(repo, ref);
+            if (!(repo.loadFromInternal(commit.getTreeHash()) instanceof Tree tree)) {
+                throw new MiniGitApiException("Commit tree is missing. Repository is corrupted.");
+            }
+            repo.checkoutTree(tree);
+            if (repo.isBranch(ref)) {
+                repo.setHeadToBranch(ref);
+            } else {
+                repo.setHeadToCommit(commit);
+            }
+            repo.save();
+        } catch (IOException e) {
+            throw new MiniGitApiException("Error checking out: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Create a branch pointing to the current HEAD commit. HEAD keeps its position.
+     *
+     * @param name The name of the new branch. An existing branch with that name is moved.
+     * @throws MiniGitApiException If there are no commits yet or saving fails.
+     */
+    public void makeBranch(String name) throws MiniGitApiException {
+        Repository repo = loadRepo();
+        String headCommitHash = repo.getHeadCommitHash();
+        if (headCommitHash == null) {
+            throw new MiniGitApiException("Cannot create a branch. There are no commits yet.");
+        }
+        try {
+            repo.setBranch(name, headCommitHash);
+            repo.save();
+        } catch (IOException e) {
+            throw new MiniGitApiException("Error creating branch: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get the names of all branches and tags.
+     *
+     * @return Sorted list of the branch and tag names, usable as checkout targets.
+     * @throws MiniGitApiException If the repository cannot be read.
+     */
+    public List<String> refs() throws MiniGitApiException {
+        Repository repo = loadRepo();
+        return Stream.concat(repo.getBranches().keySet().stream(), repo.getTags().keySet().stream())
+                .sorted().toList();
     }
 
     /**
@@ -386,6 +493,55 @@ public final class MiniGitApi {
             return blob;
         }
         throw new MiniGitApiException("Object " + hash + " is not a blob. Repository is corrupted.");
+    }
+
+    /**
+     * Load the blob with the specified hash, or an empty blob for a null hash.
+     *
+     * <p>
+     *     Diffs use the empty blob as the missing side of a created/deleted file.
+     * </p>
+     *
+     * @param repo The repository to load from.
+     * @param hash The hash of the blob, or null.
+     * @return The loaded blob, or an empty blob.
+     * @throws MiniGitApiException If the object does not exist or is not a blob.
+     * @throws IOException If loading the object fails.
+     */
+    private static Blob loadBlobOrEmpty(Repository repo, String hash) throws MiniGitApiException, IOException {
+        return hash == null ? new Blob(new byte[0]) : loadBlob(repo, hash);
+    }
+
+    /**
+     * Load the commit with the specified hash from the repository.
+     *
+     * @param repo The repository to load from.
+     * @param hash The hash of the commit.
+     * @return The loaded commit.
+     * @throws MiniGitApiException If the object does not exist or is not a commit.
+     * @throws IOException If loading the object fails.
+     */
+    private static Commit loadCommit(Repository repo, String hash) throws MiniGitApiException, IOException {
+        if (repo.loadFromInternal(hash) instanceof Commit commit) {
+            return commit;
+        }
+        throw new MiniGitApiException("Object " + hash + " is not a commit.");
+    }
+
+    /**
+     * Get the index of a commit.
+     *
+     * @param repo The repository to load from.
+     * @param commit The commit whose index to build.
+     * @return Map "path -> blob hash" of the files in the commit.
+     * @throws MiniGitApiException If the commit tree is missing.
+     * @throws IOException If loading the tree fails.
+     */
+    private static Map<Path, String> commitIndex(Repository repo, Commit commit) throws MiniGitApiException, IOException {
+        if (repo.loadFromInternal(commit.getTreeHash()) instanceof Tree tree) {
+            return tree.getIndex(repo);
+        }
+        throw new MiniGitApiException("Commit tree is missing. Repository is corrupted.");
     }
 
     /**

@@ -3,6 +3,7 @@ package cz.cuni.mff.jordanpa.minigit.gui;
 import cz.cuni.mff.jordanpa.minigit.api.*;
 import cz.cuni.mff.jordanpa.minigit.gui.panels.DiffPanel;
 import cz.cuni.mff.jordanpa.minigit.gui.panels.StagedPanel;
+import cz.cuni.mff.jordanpa.minigit.gui.panels.TreePanel;
 import cz.cuni.mff.jordanpa.minigit.gui.panels.UnstagedPanel;
 import cz.cuni.mff.jordanpa.minigit.gui.utils.MiniGitBackgroundWorker;
 
@@ -31,6 +32,7 @@ public class MiniGitGuiApp extends Application {
     private UnstagedPanel unstagedPanel;
     private StagedPanel stagedPanel;
     private DiffPanel diffPanel;
+    private TreePanel treePanel;
     private final Label conflictRow = new Label("Conflicts soon");
 
     @Override
@@ -60,19 +62,26 @@ public class MiniGitGuiApp extends Application {
         unstagedPanel = new UnstagedPanel(api, this::refresh);
         stagedPanel = new StagedPanel(api, this::refresh);
         diffPanel = new DiffPanel(api);
+        treePanel = new TreePanel(api, this::refresh);
 
-        // Show diff of file if some was clicked, and deselect the other panel
-        unstagedPanel.setOnFileClicked(file -> {
+        // Show diff of file/commit if some was clicked, and deselect the other panels
+        unstagedPanel.setOnItemClicked(file -> {
             stagedPanel.clearSelection();
+            treePanel.clearSelection();
             diffPanel.showUnstaged(file);
         });
-        stagedPanel.setOnFileClicked(file -> {
+        stagedPanel.setOnItemClicked(file -> {
             unstagedPanel.clearSelection();
+            treePanel.clearSelection();
             diffPanel.showStaged(file);
         });
+        treePanel.setOnItemClicked(commit -> {
+            unstagedPanel.clearSelection();
+            stagedPanel.clearSelection();
+            diffPanel.showCommit(commit);
+        });
 
-        SplitPane panels = new SplitPane(unstagedPanel, stagedPanel, diffPanel,
-                panelWithButtons("Tree", new Label("Commit tree will be here")));
+        SplitPane panels = new SplitPane(unstagedPanel, stagedPanel, diffPanel, treePanel);
 
         panels.setOrientation(Orientation.HORIZONTAL);
         panels.setDividerPositions(0.25, 0.5, 0.75);
@@ -100,6 +109,7 @@ public class MiniGitGuiApp extends Application {
             stagedPanel.setFiles(status.staged());
             stage.setTitle("MiniGit Gui ~ " + headText(status));
         });
+        MiniGitBackgroundWorker.run(api::log, treePanel::setCommits);
     }
 
     /**
@@ -114,43 +124,5 @@ public class MiniGitGuiApp extends Application {
             case COMMIT -> "detached at " + status.headCommitHash().substring(0, 7);
             case UNSET -> "no commits yet";
         };
-    }
-
-    /**
-     * Wraps a component with a title label above it.
-     *
-     * @param title title shown above the content
-     * @param content the panel content
-     * @return the wrapped panel
-     */
-    private static VBox titled(String title, Node content) {
-        VBox box = new VBox(5, new Label(title), content);
-        box.setPadding(new Insets(5));
-        VBox.setVgrow(content, Priority.ALWAYS);
-        return box;
-    }
-
-    /**
-     * Wraps a component with a title above and a row of buttons below.
-     *
-     * @param title title shown above the content
-     * @param content the panel content
-     * @param buttons buttons shown below the content
-     * @return the wrapped panel
-     */
-    private static VBox panelWithButtons(String title, Node content, Button... buttons) {
-        VBox box = titled(title, content);
-        HBox row = new HBox(5, buttons);
-        if (buttons.length == 0) {
-            Button spacerFakeButton = new Button("bubu");
-            spacerFakeButton.setVisible(false);
-            row.getChildren().add(spacerFakeButton);
-        }
-        for (Node button : row.getChildren()) {
-            ((Button) button).setMaxWidth(Double.MAX_VALUE);
-            HBox.setHgrow(button, Priority.ALWAYS);
-        }
-        box.getChildren().add(row);
-        return box;
     }
 }
