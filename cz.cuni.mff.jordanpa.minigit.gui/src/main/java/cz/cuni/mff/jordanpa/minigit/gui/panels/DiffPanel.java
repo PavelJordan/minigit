@@ -5,6 +5,7 @@ import cz.cuni.mff.jordanpa.minigit.gui.utils.ListPanelHelper;
 import cz.cuni.mff.jordanpa.minigit.gui.utils.MiniGitBackgroundWorker;
 import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -60,6 +61,15 @@ public final class DiffPanel extends ListPanelHelper<DiffLine> {
      */
     public void showStaged(Repository.FileStatus file) {
         show("staged " + file.path(), () -> api.diffIndexVsHead(file.path()));
+    }
+
+    /**
+     * Show diff of conflicted file - working directory version vs index.
+     *
+     * @param file The clicked CWD-relative path.
+     */
+    public void showConflict(Path file) {
+        show("conflicted " + file, () -> api.diffWorkingVsIndex(file));
     }
 
     /**

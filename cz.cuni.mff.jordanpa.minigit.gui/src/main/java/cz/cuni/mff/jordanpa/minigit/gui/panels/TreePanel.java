@@ -3,9 +3,11 @@ package cz.cuni.mff.jordanpa.minigit.gui.panels;
 import cz.cuni.mff.jordanpa.minigit.api.*;
 import cz.cuni.mff.jordanpa.minigit.gui.utils.ListPanelHelper;
 import cz.cuni.mff.jordanpa.minigit.gui.utils.MiniGitBackgroundWorker;
+import cz.cuni.mff.jordanpa.minigit.structures.Repository;
 
 import javafx.scene.control.*;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * Panel with the commit history of the repository.
@@ -13,7 +15,8 @@ import java.util.*;
  * <p>
  *     Each commit is one line - short hash, branches/tags pointing to it, and the message.
  *     Double-clicking a commit shows its details. The "Checkout" button moves to a
- *     branch/tag/selected commit picked from a list, the "Make branch" button creates a branch at HEAD.
+ *     branch/tag/selected commit picked from a list, the "Merge" button merges the target
+ *     into HEAD and the "Make branch" button creates a branch at HEAD.
  * </p>
  */
 public final class TreePanel extends ListPanelHelper<CommitInfo> {
@@ -26,10 +29,12 @@ public final class TreePanel extends ListPanelHelper<CommitInfo> {
      */
     public TreePanel(MiniGitApi api, Runnable refresh) {
         Button checkout = new Button("Checkout");
-        Button makeBranch = new Button("Make branch");
-        super("Tree", checkout, makeBranch);
+        Button merge = new Button("Merge");
+        Button makeBranch = new Button("Branch");
+        super("Tree", checkout, merge, makeBranch);
 
         setUpCheckoutAction(api, refresh, checkout);
+        setUpMergeAction(api, refresh, merge);
         setUpMakeBranchAction(api, refresh, makeBranch);
         setUpDetailsOnDoubleClick();
     }
@@ -54,34 +59,84 @@ public final class TreePanel extends ListPanelHelper<CommitInfo> {
     }
 
     /**
-     * One checkout target the user can pick in the checkout dialog.
+     * One target the user can pick in the checkout/merge dialog.
      *
      * @param label What the user sees in the list.
      * @param ref The branch name, tag name, or commit hash to pass to the API.
      */
-    private record CheckoutTarget(String label, String ref) {
+    private record RefTarget(String label, String ref) {
         @Override
         public String toString() {
             return label;
         }
     }
 
-    private void setUpCheckoutAction(MiniGitApi api, Runnable refresh, Button checkout) {
-        checkout.setOnAction(_ -> MiniGitBackgroundWorker.run(api::refs, (List<String> refs) -> {
-            List<CheckoutTarget> targets = new ArrayList<>(refs.stream()
-                    .map(ref -> new CheckoutTarget(ref, ref)).toList());
+    /**
+     * Let the user pick a branch, tag, or the currently selected commit.
+     *
+     * @param api The MiniGit API.
+     * @param title The dialog title.
+     * @param header The dialog header text.
+     * @param onPicked Called with the picked target.
+     */
+    private void pickTarget(MiniGitApi api, String title, String header, Consumer<RefTarget> onPicked) {
+        MiniGitBackgroundWorker.run(api::refs, (List<String> refs) -> {
+            List<RefTarget> targets = new ArrayList<>(refs.stream()
+                    .map(ref -> new RefTarget(ref, ref)).toList());
             CommitInfo selected = listView.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                targets.add(new CheckoutTarget(oneLine(selected), selected.hash()));
+                targets.add(new RefTarget(oneLine(selected), selected.hash()));
             }
 
-            ChoiceDialog<CheckoutTarget> dialog = new ChoiceDialog<>(null, targets);
-            dialog.setTitle("Checkout");
-            dialog.setHeaderText("Checkout a branch, tag, or the selected commit");
+            ChoiceDialog<RefTarget> dialog = new ChoiceDialog<>(null, targets);
+            dialog.setTitle(title);
+            dialog.setHeaderText(header);
             dialog.setContentText("Target:");
-            dialog.showAndWait().ifPresent(target ->
-                    MiniGitBackgroundWorker.run(() -> api.checkout(target.ref()), refresh));
-        }));
+            dialog.showAndWait().ifPresent(onPicked);
+        });
+    }
+
+    private void setUpCheckoutAction(MiniGitApi api, Runnable refresh, Button checkout) {
+        checkout.setOnAction(_ -> pickTarget(api, "Checkout", "Checkout a branch, tag, or the selected commit",
+                target -> MiniGitBackgroundWorker.run(() -> api.checkout(target.ref()), refresh)));
+    }
+
+    /**
+     * The result of starting a merge.
+     *
+     * @param status The merge status returned by the API.
+     * @param stillMerging Whether the merge still waits for "Merge apply". Look into CLI on how this works in detail.
+     */
+    private record MergeOutcome(Repository.MergeStatus status, boolean stillMerging) { }
+
+    private void setUpMergeAction(MiniGitApi api, Runnable refresh, Button merge) {
+        merge.setOnAction(_ -> pickTarget(api, "Merge", "Merge a branch, tag, or the selected commit into HEAD",
+                target -> MiniGitBackgroundWorker.run(
+                        () -> new MergeOutcome(api.merge(target.ref()), api.status().isMerging()),
+                        (MergeOutcome outcome) -> {
+                            showMergeResult(outcome);
+                            refresh.run();
+                        })));
+    }
+
+    /**
+     * Show a dialog with the result of a started merge.
+     *
+     * @param outcome The result of the merge.
+     */
+    private static void showMergeResult(MergeOutcome outcome) {
+        switch (outcome.status()) {
+            case INVALID -> new Alert(Alert.AlertType.ERROR, "This merge is impossible.",
+                    ButtonType.OK).showAndWait();
+            case CONFLICT -> new Alert(Alert.AlertType.INFORMATION,
+                    "Conflicts detected. Resolve the files in the bottom bar, stage them, then press Merge apply.",
+                    ButtonType.OK).showAndWait();
+            case APPLIED -> new Alert(Alert.AlertType.INFORMATION,
+                    outcome.stillMerging()
+                            ? "Merged cleanly. Review the staged changes and press Merge apply to create the merge commit."
+                            : "Merge successful.",
+                    ButtonType.OK).showAndWait();
+        }
     }
 
     private void setUpMakeBranchAction(MiniGitApi api, Runnable refresh, Button makeBranch) {

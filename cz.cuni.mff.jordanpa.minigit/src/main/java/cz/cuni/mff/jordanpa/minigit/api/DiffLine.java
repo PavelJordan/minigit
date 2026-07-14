@@ -18,9 +18,13 @@ public record DiffLine(Type type, String line) {
      * Type of change of one diff line.
      */
     public enum Type {
+        /** The line is in both versions. */
         SAME,
+        /** The line is only in the old version. */
         DELETED,
+        /** The line is only in the new version. */
         ADDED,
+        /** The line is a file path separating files in a multi-file diff. */
         HEADER
     }
 }

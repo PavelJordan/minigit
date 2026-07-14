@@ -67,7 +67,7 @@ public final class MiniGitApi {
     /**
      * Get api-friendly status of current repository.
      *
-     * @return HEAD, staged changes, unstaged changes, and the merge in progress (if any).
+     * @return HEAD, staged changes, unstaged changes, and the merge in progress with its conflicts (if any).
      * @throws MiniGitApiException If repository cannot be read.
      */
     public StatusResult status() throws MiniGitApiException {
@@ -79,7 +79,7 @@ public final class MiniGitApi {
             List<Repository.FileStatus> staged = repo.getStagedToLastCommitStatus().stream()
                     .filter(s -> s.status() != Repository.FileStatusType.SAME)
                     .toList();
-            return new StatusResult(repo.getHead(), repo.getHeadCommitHash(), staged, unstaged, repo.getMergingCommits());
+            return new StatusResult(repo.getHead(), repo.getHeadCommitHash(), staged, unstaged, repo.getMergingCommits(), repo.getMergeConflicts());
         } catch (IOException e) {
             throw new MiniGitApiException("Error reading repository status: " + e.getMessage(), e);
         }

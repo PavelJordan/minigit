@@ -1,5 +1,6 @@
 package cz.cuni.mff.jordanpa.minigit.api;
 
+import cz.cuni.mff.jordanpa.minigit.misc.Merger;
 import cz.cuni.mff.jordanpa.minigit.structures.*;
 
 import java.nio.file.Path;
@@ -13,8 +14,9 @@ import java.util.List;
  * @param staged Differences between the index and the last commit - the "staged changes".
  * @param unstaged Differences between the working directory and the index - the "unstaged changes". Files with status NEW are the untracked files.
  * @param merging The merge currently in progress, or null if no merge is in progress.
+ * @param conflicts The conflicts detected when the merge in progress started. Empty if the merge had none or no merge is in progress.
  */
-public record StatusResult(Head head, String headCommitHash, List<Repository.FileStatus> staged, List<Repository.FileStatus> unstaged, MergingCommits merging) {
+public record StatusResult(Head head, String headCommitHash, List<Repository.FileStatus> staged, List<Repository.FileStatus> unstaged, MergingCommits merging, List<Merger.Conflict> conflicts) {
 
     /**
      * Whether a merge is currently in progress.

@@ -11,6 +11,8 @@ import javafx.scene.control.*;
  */
 public final class StagedPanel extends FileListPanelHelper {
 
+    private final Button commit;
+
     /**
      * Create the panel.
      *
@@ -21,9 +23,19 @@ public final class StagedPanel extends FileListPanelHelper {
         Button unstage = new Button("Unstage");
         Button commit = new Button("Commit");
         super("Staged", unstage, commit);
+        this.commit = commit;
 
         setUpUnstageAction(api, refresh, unstage);
         setUpCommitAction(api, refresh, commit);
+    }
+
+    /**
+     * Enable or disable the Commit button based on whether a merge is in progress.
+     *
+     * @param merging Whether a merge is in progress.
+     */
+    public void setMerging(boolean merging) {
+        commit.setDisable(merging);
     }
 
     private static void setUpCommitAction(MiniGitApi api, Runnable refresh, Button commit) {

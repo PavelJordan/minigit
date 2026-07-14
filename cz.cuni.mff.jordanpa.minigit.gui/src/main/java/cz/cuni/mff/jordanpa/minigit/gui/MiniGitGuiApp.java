@@ -1,6 +1,7 @@
 package cz.cuni.mff.jordanpa.minigit.gui;
 
 import cz.cuni.mff.jordanpa.minigit.api.*;
+import cz.cuni.mff.jordanpa.minigit.gui.panels.ConflictBar;
 import cz.cuni.mff.jordanpa.minigit.gui.panels.DiffPanel;
 import cz.cuni.mff.jordanpa.minigit.gui.panels.StagedPanel;
 import cz.cuni.mff.jordanpa.minigit.gui.panels.TreePanel;
@@ -21,7 +22,7 @@ import java.nio.file.Path;
  * <p>
  *     Layout is: unstaged files | staged files | diff of the clicked file | commit tree.
  *     Below the file panels there are stage/reset + unstage/commit buttons,
- *     and a row listing files with merge conflicts.
+ *     and a bar with the merge in progress and its conflicted files.
  * </p>
  */
 public class MiniGitGuiApp extends Application {
@@ -33,7 +34,7 @@ public class MiniGitGuiApp extends Application {
     private StagedPanel stagedPanel;
     private DiffPanel diffPanel;
     private TreePanel treePanel;
-    private final Label conflictRow = new Label("Conflicts soon");
+    private ConflictBar conflictBar;
 
     @Override
     public void start(Stage stage) {
@@ -63,6 +64,12 @@ public class MiniGitGuiApp extends Application {
         stagedPanel = new StagedPanel(api, this::refresh);
         diffPanel = new DiffPanel(api);
         treePanel = new TreePanel(api, this::refresh);
+        conflictBar = new ConflictBar(api, this::refresh, file -> {
+            unstagedPanel.clearSelection();
+            stagedPanel.clearSelection();
+            treePanel.clearSelection();
+            diffPanel.showConflict(file);
+        });
 
         // Show diff of file/commit if some was clicked, and deselect the other panels
         unstagedPanel.setOnItemClicked(file -> {
@@ -89,7 +96,7 @@ public class MiniGitGuiApp extends Application {
         Button refreshButton = new Button("Refresh");
         refreshButton.setOnAction(_ -> refresh());
 
-        HBox bottomRow = new HBox(5, refreshButton, conflictRow);
+        HBox bottomRow = new HBox(5, refreshButton, conflictBar);
         bottomRow.setAlignment(Pos.CENTER_LEFT);
         bottomRow.setPadding(new Insets(5));
 
@@ -107,6 +114,8 @@ public class MiniGitGuiApp extends Application {
             diffPanel.clear();
             unstagedPanel.setFiles(status.unstaged());
             stagedPanel.setFiles(status.staged());
+            stagedPanel.setMerging(status.isMerging());
+            conflictBar.update(status);
             stage.setTitle("MiniGit Gui ~ " + headText(status));
         });
         MiniGitBackgroundWorker.run(api::log, treePanel::setCommits);

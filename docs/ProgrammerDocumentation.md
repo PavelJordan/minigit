@@ -469,8 +469,67 @@ but with nice parameters and nice return values, so it can be easily used by Min
 The api contains as little methods as possible for GUI (so creation, and author selection, for example, must be handled via CLI).
 I will first describe API, so describing the GUI that uses the API will be easier.
 
-TODO
+Everything lives in the `cz.cuni.mff.jordanpa.minigit.api` package:
+
+ - Each method corresponds to one CLI command, and behaves the same. If you want the details, read the Javadoc of the CLI command.
+ - Uses typed parameters and return values
+ - On any error, a `MiniGitApiException` is thrown. Its message is a good, user-readable message.
+ - Every method loads a fresh `Repository` from disk, does its work, and saves.
+ - The API works on a single repository - no project manager.
+
+```java
+public final class MiniGitApi {
+    public static MiniGitApi open(Path repoRoot) throws MiniGitApiException;
+
+    public StatusResult status() throws MiniGitApiException;
+
+    public void stage(Collection<Path> patterns) throws MiniGitApiException;
+    public void discardUnstaged() throws MiniGitApiException;
+    public void unstageAll() throws MiniGitApiException;
+    public String commit(String message) throws MiniGitApiException;
+
+    public List<CommitInfo> log() throws MiniGitApiException;
+    public List<DiffLine> diffWorkingVsIndex(Path file) throws MiniGitApiException;
+    public List<DiffLine> diffIndexVsHead(Path file) throws MiniGitApiException;
+    public List<DiffLine> diffCommitVsParent(String hash) throws MiniGitApiException;
+
+    public void checkout(String ref) throws MiniGitApiException;
+    public void makeBranch(String name) throws MiniGitApiException;
+    public List<String> refs() throws MiniGitApiException;
+
+    public Repository.MergeStatus merge(String ref) throws MiniGitApiException;
+    public void mergeApply(String message) throws MiniGitApiException;
+    public void mergeStop() throws MiniGitApiException;
+}
+```
+
+The return values are records:
+
+ - `StatusResult` - HEAD, staged/unstaged file statuses, and the merge in progress with its conflicts, if any.
+ - `CommitInfo` - one commit of `log()` with its parents, refs pointing to it, and whether it is HEAD.
+ - `DiffLine` - one line of a whole-file diff, typed `SAME`/`DELETED`/`ADDED`/`HEADER`. The diff API methods return
+   the entire file with new + deleted old lines interleaved. `HEADER` separates files in multi-file diffs.
+
+The conflicts detected when a merge starts are persisted in the `.minigit/merging` file - `path<TAB>message` per conflict.
+Thanks to that, `status()` can keep returning them until the merge is applied or stopped, even from a different process.
+The merge is concluded using `mergeApply()`, as in the CLI. Use `status().isMerging()` to verify the status.
 
 ### GUI
 
-TODO
+The GUI is its own module `cz.cuni.mff.jordanpa.minigit.gui`, a JavaFX application built into the standalone
+`minigit-gui` command. It uses the core of MiniGit through `MiniGitApi`.
+
+`MiniGitGuiApp` opens the repository in the current working directory and builds the window:
+four panels next to each other, and a bottom row with the Refresh button and the merge/conflicts bar.
+Start the gui yourself through the `minigit-gui` command to see all the buttons and functionality.
+
+There is also `gui.utils` with:
+
+
+ - `ListPanelHelper<T>`: title + ListView<T> + button row. Subclasses define item text/style.
+ - `FileListPanelHelper`: ListView<Repository.FileStatus> with [M]/[D]/[N]/[S] markers. Used by unstaged/staged panels.
+ - `MiniGitBackgroundWorker`: Used for most API calls, so they don't run in the GUI thread.
+
+The `MiniGitBackgroundWorker` ensures that each call runs in its own virtual thread through executor and the
+success callback is run back on the GUI thread via `Platform.runLater`. If the call throws
+`MiniGitApiException`, the worker shows its pretty message in an error `Alert`.

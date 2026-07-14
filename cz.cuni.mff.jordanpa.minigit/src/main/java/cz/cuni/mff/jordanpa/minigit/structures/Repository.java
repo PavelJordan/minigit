@@ -100,6 +100,7 @@ public final class Repository implements MinigitObjectLoader {
     private final Path ignoredPath;
     private final Path mergingPath;
     private MergingCommits mergingCommits = null;
+    private List<Merger.Conflict> mergeConflicts = new ArrayList<>();
     private Head head;
 
     /**
@@ -628,6 +629,16 @@ public final class Repository implements MinigitObjectLoader {
     }
 
     /**
+     * Get the conflicts of the merge in progress.
+     *
+     * @return The conflicts detected when the merge in progress started, or an empty list
+     * if the merge had none / no merge is in progress.
+     */
+    public List<Merger.Conflict> getMergeConflicts() {
+        return mergeConflicts;
+    }
+
+    /**
      * Start a merge operation and try to apply it.
      *
      * @param mergingCommits The commits and head information to merge.
@@ -684,6 +695,7 @@ public final class Repository implements MinigitObjectLoader {
      */
     public void stopMerge() {
         this.mergingCommits = null;
+        this.mergeConflicts = new ArrayList<>();
     }
 
     /**
@@ -767,12 +779,13 @@ public final class Repository implements MinigitObjectLoader {
                 if (MR.conflicts().isEmpty()) {
                     return MergeStatus.APPLIED;
                 }
-                // If there are conflicts, inform the user and say it to the caller.
+                // If there are conflicts, inform the user.
                 else {
                     IO.println("Conflicts detected. MiniGit asks you to resolve them:");
                     for (var conflict : MR.conflicts()) {
                         IO.println(conflict.toString());
                     }
+                    mergeConflicts = MR.conflicts();
                     return MergeStatus.CONFLICT;
                 }
             }
@@ -794,11 +807,17 @@ public final class Repository implements MinigitObjectLoader {
             String headType = in.readLine();
             String headData = in.readLine();
             String intoCommit = in.readLine();
+            mergeConflicts.clear();
+            for (String line = in.readLine(); line != null; line = in.readLine()) {
+                String[] conflict = line.split("\t", 2);
+                mergeConflicts.add(new Merger.Conflict(Path.of(conflict[0]), conflict[1]));
+            }
             mergingCommits = new MergingCommits(fromCommit, new Head(Head.Type.valueOf(headType), headData), intoCommit);
         }
         catch (Exception e) {
             IO.println("Error loading merging information. Aborting merge");
             mergingCommits = null;
+            mergeConflicts.clear();
         }
     }
 
@@ -824,6 +843,10 @@ public final class Repository implements MinigitObjectLoader {
             out.write(mergingCommits.intoHead().data());
             out.newLine();
             out.write(mergingCommits.intoCommit());
+            for (Merger.Conflict conflict : mergeConflicts) {
+                out.newLine();
+                out.write(conflict.path() + "\t" + conflict.message());
+            }
         }
     }
 
