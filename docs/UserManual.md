@@ -84,4 +84,14 @@ All of this can be implemented later, if needed.
 
 ## The gui extension
 
-TODO
+If you run `minigit-gui` in your repository, you will see a graphical interface for your repository.
+Here, you can stage/unstage files, create commits, see the diff in a very pretty format (whole file with interleaved new/deletion lines),
+checkout branches/tags/commits... Make branches, and see the whole commit tree sorted by time of creation.
+You can also double-click  commits to see their details: hash, author, parents, message and time.
+
+You can also merge branches easily here: pick a branch/tag/commit to merge into HEAD, and a bar appears at the bottom
+showing the merge in progress and its conflicted files. Click a conflicted file to see its diff,
+resolve and stage it, then press merge apply to create the merge commit, or merge stop if you changed your mind.
+
+The usage is mostly the same as the CLI, but more user-friendly - it warns you before doing destructive actions
+and gives you more sense of control. Try it out! :)
